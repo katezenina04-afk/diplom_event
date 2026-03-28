@@ -22,6 +22,9 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'event_calendar' %}">Календарь</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'specialists_list' %}">Специалисты</a>
+                    </li>
                     {% if user.is_authenticated %}
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'my_events' %}">Мои мероприятия</a>
