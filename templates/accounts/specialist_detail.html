@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ specialist.full_name }}{% endblock %}
+
+{% block content %}
+<h1>{{ specialist.full_name }}</h1>
+
+<div class="card">
+    <div class="card-body">
+        <p><strong>Специализация:</strong> {{ specialist.specialization }}</p>
+        <p><strong>Компетенции:</strong><br>{{ specialist.competencies|linebreaks }}</p>
+        <p><strong>Опыт:</strong> {{ specialist.experience_years }} лет</p>
+        <p><strong>Город:</strong> {{ specialist.city|default:"Не указан" }}</p>
+        <p><strong>Email:</strong> {{ specialist.contact_email|default:"Не указан" }}</p>
+        <p><strong>Профиль подтверждён:</strong> {% if specialist.is_verified %}Да{% else %}Нет{% endif %}</p>
+    </div>
+</div>
+
+<a href="{% url 'specialists_list' %}" class="btn btn-secondary mt-3">Назад к каталогу</a>
+{% endblock %}

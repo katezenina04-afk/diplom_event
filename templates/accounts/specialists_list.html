@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Специалисты{% endblock %}
+
+{% block content %}
+<h1>Каталог специалистов</h1>
+
+<div class="row">
+    {% for specialist in specialists %}
+    <div class="col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">{{ specialist.full_name }}</h5>
+                <p class="card-text">
+                    <strong>Специализация:</strong> {{ specialist.specialization }}<br>
+                    <strong>Опыт:</strong> {{ specialist.experience_years }} лет<br>
+                    <strong>Город:</strong> {{ specialist.city|default:"Не указан" }}
+                </p>
+                <a href="{% url 'specialist_detail' specialist.id %}" class="btn btn-primary">Подробнее</a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <p>Пока нет одобренных специалистов.</p>
+    {% endfor %}
+</div>
+{% endblock %}
