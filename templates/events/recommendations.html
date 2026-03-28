@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title %}Рекомендации{% endblock %}
+
+{% block content %}
+<h1>🎯 Рекомендации для вас</h1>
+
+<div class="row">
+    {% for event in recommendations %}
+    <div class="col-md-4 mb-3">
+        <div class="card h-100">
+            {% if event.image %}
+                <img src="{{ event.image.url }}" class="card-img-top" alt="{{ event.title }}" style="height: 150px; object-fit: cover;">
+            {% endif %}
+            <div class="card-body">
+                <h5>{{ event.title }}</h5>
+                <p class="text-muted">{{ event.start_datetime|date:"d.m.Y H:i" }}</p>
+                <p>{{ event.location }}</p>
+                <a href="{% url 'event_detail' event.id %}" class="btn btn-primary">Подробнее</a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col">
+        <p>Пока нет рекомендаций. Заполните свой профиль и добавьте интересы.</p>
+        <a href="{% url 'profile' %}" class="btn btn-primary">Заполнить профиль</a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

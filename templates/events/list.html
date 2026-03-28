@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Афиша мероприятий{% endblock %}
+
+{% block content %}
+<h1>Афиша мероприятий</h1>
+
+{% if categories %}
+<div class="mb-3">
+    {% for cat in categories %}
+    <span class="badge bg-secondary me-1">{{ cat.name }}</span>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="row">
+    {% for event in events %}
+    <div class="col-md-4 mb-3">
+        <div class="card h-100">
+            {% if event.image %}
+                <img src="{{ event.image.url }}" class="card-img-top" alt="{{ event.title }}" style="height: 200px; object-fit: cover;">
+            {% endif %}
+            <div class="card-body">
+                <h5 class="card-title">{{ event.title }}</h5>
+                <p class="card-text">
+                    <strong>Дата:</strong> {{ event.start_datetime|date:"d.m.Y H:i" }}<br>
+                    <strong>Место:</strong> {{ event.location }}<br>
+                    <strong>Цена:</strong> {% if event.is_free %}Бесплатно{% else %}{{ event.price }} руб.{% endif %}
+                </p>
+                <a href="{% url 'event_detail' event.id %}" class="btn btn-primary">Подробнее</a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col">
+        <p>Нет предстоящих мероприятий</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

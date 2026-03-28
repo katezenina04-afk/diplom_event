@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block title %}Редактировать: {{ event.title }}{% endblock %}
+
+{% block content %}
+<h1>Редактировать: {{ event.title }}</h1>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-success">Сохранить</button>
+    <a href="{% url 'event_detail' event.id %}" class="btn btn-secondary">Отмена</a>
+</form>
+{% endblock %}

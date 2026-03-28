@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}Календарь{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Календарь мероприятий</h1>
+    <div>
+        <a href="{% url 'event_calendar' prev_year prev_month %}" class="btn btn-outline-primary">← {{ prev_month }}</a>
+        <span class="mx-3">{{ month_name }} {{ year }}</span>
+        <a href="{% url 'event_calendar' next_year next_month %}" class="btn btn-outline-primary">{{ next_month }} →</a>
+    </div>
+</div>
+
+<table class="table table-bordered text-center">
+    <thead class="table-dark">
+        <tr><th>Пн</th><th>Вт</th><th>Ср</th><th>Чт</th><th>Пт</th><th>Сб</th><th>Вс</th></thead>
+    <tbody>
+        {% for week in calendar_data %}
+        <tr style="height: 100px;">
+            {% for day_data in week %}
+            <td class="{% if day_data.is_today %}table-primary{% endif %} align-top">
+                {% if day_data.day %}
+                    <strong>{{ day_data.day }}</strong>
+                    <div class="mt-2">
+                        {% for event in day_data.events %}
+                            <a href="{% url 'event_detail' event.id %}" class="badge bg-info text-decoration-none d-block mb-1">
+                                {{ event.title|truncatechars:15 }}
+                            </a>
+                        {% empty %}
+                            <small class="text-muted">—</small>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

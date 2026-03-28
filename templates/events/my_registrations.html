@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}Мои записи{% endblock %}
+
+{% block content %}
+<h1>Мои записи</h1>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Мероприятие</th>
+            <th>Дата</th>
+            <th>Место</th>
+            <th>Код для входа</th>
+            <th></th>
+        </thead>
+    <tbody>
+        {% for reg in registrations %}
+        <tr>
+            <td><a href="{% url 'event_detail' reg.event.id %}">{{ reg.event.title }}</a></td>
+            <td>{{ reg.event.start_datetime|date:"d.m.Y H:i" }}</td>
+            <td>{{ reg.event.location }}</td>
+            <td><strong>{{ reg.entry_code }}</strong></td>
+            <td>
+                <a href="{% url 'cancel_registration' reg.id %}" class="btn btn-sm btn-danger" onclick="return confirm('Отменить запись?')">Отменить</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="5">Вы ещё не записаны ни на одно мероприятие</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

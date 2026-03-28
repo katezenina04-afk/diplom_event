@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Главная{% endblock %}
+
+{% block content %}
+<div class="jumbotron bg-light p-5 rounded-3 mb-4">
+    <h1 class="display-4">Добро пожаловать в Афишу мероприятий!</h1>
+    <p class="lead">Платформа для поиска и организации мероприятий</p>
+    <hr class="my-4">
+    <p>Создавайте свои мероприятия, находите интересные события, записывайтесь и участвуйте!</p>
+    {% if not user.is_authenticated %}
+        <a href="{% url 'register' %}" class="btn btn-primary btn-lg">Присоединиться</a>
+        <a href="{% url 'login' %}" class="btn btn-outline-primary btn-lg">Войти</a>
+    {% endif %}
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="bi bi-calendar-event" style="font-size: 2rem;"></i>
+                <h5 class="mt-2">Создавайте мероприятия</h5>
+                <p>Легко создавайте и публикуйте свои мероприятия</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="bi bi-search" style="font-size: 2rem;"></i>
+                <h5 class="mt-2">Находите события</h5>
+                <p>Ищите интересные мероприятия по категориям</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="bi bi-ticket" style="font-size: 2rem;"></i>
+                <h5 class="mt-2">Записывайтесь</h5>
+                <p>Быстрая запись на любые мероприятия</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
