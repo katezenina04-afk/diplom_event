@@ -1,11 +1,12 @@
 from django import forms
 from .models import Event
 
+
 class EventForm(forms.ModelForm):
     class Meta:
         model = Event
         fields = [
-            'title', 'description', 'image', 
+            'title', 'description', 'image',
             'start_datetime', 'end_datetime', 'location',
             'latitude', 'longitude',
             'categories', 'price', 'is_free', 'max_participants'
@@ -36,3 +37,20 @@ class EventForm(forms.ModelForm):
             'is_free': 'Бесплатное мероприятие',
             'max_participants': 'Максимум участников',
         }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start_datetime = cleaned_data.get('start_datetime')
+        end_datetime = cleaned_data.get('end_datetime')
+        is_free = cleaned_data.get('is_free')
+        price = cleaned_data.get('price')
+
+        if start_datetime and end_datetime and end_datetime < start_datetime:
+            self.add_error('end_datetime', 'Дата окончания не может быть раньше даты начала.')
+
+        if is_free:
+            cleaned_data['price'] = 0
+        elif price is None or price <= 0:
+            self.add_error('price', 'Для платного мероприятия укажите цену больше 0.')
+
+        return cleaned_data
