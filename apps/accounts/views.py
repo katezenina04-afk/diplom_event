@@ -1,9 +1,9 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import login, authenticate
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth import login, authenticate, update_session_auth_hash
+from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .forms import UserRegistrationForm
+from .forms import UserRegistrationForm, ProfileForm
 
 def register_view(request):
     if request.method == 'POST':
@@ -42,3 +42,18 @@ def logout_view(request):
 @login_required
 def profile_view(request):
     return render(request, 'accounts/profile.html')
+
+
+# НОВОЕ ПРЕДСТАВЛЕНИЕ ДЛЯ РЕДАКТИРОВАНИЯ ПРОФИЛЯ
+@login_required
+def edit_profile(request):
+    if request.method == 'POST':
+        form = ProfileForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Профиль успешно обновлён!')
+            return redirect('profile')
+    else:
+        form = ProfileForm(instance=request.user)
+    
+    return render(request, 'accounts/edit_profile.html', {'form': form})

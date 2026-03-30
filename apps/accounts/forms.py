@@ -21,3 +21,20 @@ class UserRegistrationForm(UserCreationForm):
         if commit:
             user.save()
         return user
+
+
+# НОВАЯ ФОРМА ДЛЯ РЕДАКТИРОВАНИЯ ПРОФИЛЯ
+class ProfileForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'phone')
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+        labels = {
+            'username': 'Имя пользователя',
+            'email': 'Электронная почта',
+            'phone': 'Телефон',
+        }
