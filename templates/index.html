@@ -15,32 +15,54 @@
 </div>
 
 <div class="row">
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body text-center">
-                <i class="bi bi-calendar-event" style="font-size: 2rem;"></i>
-                <h5 class="mt-2">Создавайте мероприятия</h5>
-                <p>Легко создавайте и публикуйте свои мероприятия</p>
+    <!-- Блок 1: Создавайте мероприятия -->
+    <div class="col-md-4 mb-4">
+        <a href="{% url 'create_event' %}" class="text-decoration-none">
+            <div class="card h-100 shadow-sm transition-hover">
+                <div class="card-body text-center">
+                    <i class="bi bi-calendar-event" style="font-size: 3rem;"></i>
+                    <h5 class="mt-3">Создавайте мероприятия</h5>
+                    <p class="text-muted">Легко создавайте и публикуйте свои мероприятия</p>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body text-center">
-                <i class="bi bi-search" style="font-size: 2rem;"></i>
-                <h5 class="mt-2">Находите события</h5>
-                <p>Ищите интересные мероприятия по категориям</p>
+
+    <!-- Блок 2: Находите события -->
+    <div class="col-md-4 mb-4">
+        <a href="{% url 'event_list' %}" class="text-decoration-none">
+            <div class="card h-100 shadow-sm transition-hover">
+                <div class="card-body text-center">
+                    <i class="bi bi-search" style="font-size: 3rem;"></i>
+                    <h5 class="mt-3">Находите события</h5>
+                    <p class="text-muted">Ищите интересные мероприятия по категориям</p>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body text-center">
-                <i class="bi bi-ticket" style="font-size: 2rem;"></i>
-                <h5 class="mt-2">Записывайтесь</h5>
-                <p>Быстрая запись на любые мероприятия</p>
+
+    <!-- Блок 3: Записывайтесь (ведёт на страницу доступных мероприятий) -->
+    <div class="col-md-4 mb-4">
+        <a href="{% url 'event_list' %}" class="text-decoration-none">
+            <div class="card h-100 shadow-sm transition-hover">
+                <div class="card-body text-center">
+                    <i class="bi bi-ticket" style="font-size: 3rem;"></i>
+                    <h5 class="mt-3">Записывайтесь</h5>
+                    <p class="text-muted">Быстрая запись на любые мероприятия</p>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
 </div>
+
+<style>
+    .transition-hover {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        cursor: pointer;
+    }
+    .transition-hover:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+</style>
 {% endblock %}

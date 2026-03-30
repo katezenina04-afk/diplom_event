@@ -20,12 +20,13 @@ class EventAdmin(admin.ModelAdmin):
     list_filter = ('status', 'start_datetime', 'category')
     search_fields = ('title', 'description', 'location')
     date_hierarchy = 'start_datetime'
-    filter_horizontal = ('category',)
+    # Убираем filter_horizontal, так как category — это ForeignKey, а не ManyToMany
+    # filter_horizontal = ('categories',)  # <-- УДАЛИТЬ ЭТУ СТРОКУ
     inlines = [RegistrationInline]
     fieldsets = (
         ('Основное', {'fields': ('title', 'description', 'image', 'creator', 'status')}),
-        ('Время и место', {'fields': ('start_datetime', 'end_datetime', 'location')}),  # убрали latitude, longitude
-        ('Категории и цена', {'fields': ('category', 'price', 'is_free', 'max_participants')}),
+        ('Время и место', {'fields': ('start_datetime', 'end_datetime', 'location')}),
+        ('Категория и цена', {'fields': ('category', 'price', 'is_free', 'max_participants')}),
     )
     
     def get_participants_count(self, obj):
