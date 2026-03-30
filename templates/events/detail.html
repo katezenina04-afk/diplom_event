@@ -9,6 +9,13 @@
         {% if event.image %}
             <img src="{{ event.image.url }}" class="img-fluid mb-3" alt="{{ event.title }}">
         {% endif %}
+        
+        {% if event.category %}
+            <div class="mb-2">
+                <span class="badge bg-info">{{ event.category.name }}</span>
+            </div>
+        {% endif %}
+        
         <p><strong>Описание:</strong> {{ event.description|linebreaks }}</p>
     </div>
     <div class="col-md-4">

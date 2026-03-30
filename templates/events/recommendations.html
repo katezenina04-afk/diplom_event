@@ -18,7 +18,12 @@
                 <h5>{{ event.title }}</h5>
                 <p class="text-muted">{{ event.start_datetime|date:"d.m.Y H:i" }}</p>
                 <p>{{ event.location }}</p>
-                <a href="{% url 'event_detail' event.id %}" class="btn btn-primary">Подробнее</a>
+                {% if event.category %}
+                    <span class="badge bg-info">{{ event.category.name }}</span>
+                {% endif %}
+                <div class="mt-2">
+                    <a href="{% url 'event_detail' event.id %}" class="btn btn-primary">Подробнее</a>
+                </div>
             </div>
         </div>
     </div>

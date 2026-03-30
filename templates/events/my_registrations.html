@@ -11,6 +11,7 @@
             <th>Мероприятие</th>
             <th>Дата</th>
             <th>Место</th>
+            <th>Категория</th>
             <th>Код для входа</th>
             <th></th>
         </tr>
@@ -21,6 +22,7 @@
             <td><a href="{% url 'event_detail' reg.event.id %}">{{ reg.event.title }}</a></td>
             <td>{{ reg.event.start_datetime|date:"d.m.Y H:i" }}</td>
             <td>{{ reg.event.location }}</td>
+            <td>{% if reg.event.category %}{{ reg.event.category.name }}{% else %}—{% endif %}</td>
             <td><strong class="text-success">{{ reg.entry_code }}</strong></td>
             <td>
                 <a href="{% url 'cancel_registration' reg.id %}" class="btn btn-sm btn-danger" onclick="return confirm('Отменить запись?')">Отменить</a>
@@ -28,7 +30,7 @@
         </tr>
         {% empty %}
         <tr>
-            <td colspan="5">Вы ещё не записаны ни на одно мероприятие</td>
+            <td colspan="6">Вы ещё не записаны ни на одно мероприятие</td>
         </tr>
         {% endfor %}
     </tbody>

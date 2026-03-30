@@ -32,7 +32,13 @@ class Event(models.Model):
     end_datetime = models.DateTimeField('Дата и время окончания', blank=True, null=True)
     location = models.CharField('Место проведения', max_length=255)  # только адрес
     
-    categories = models.ManyToManyField(Category, blank=True, verbose_name='Категории')
+    category = models.ForeignKey(
+        Category, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        verbose_name='Категория'
+    )
     
     price = models.DecimalField('Цена (руб)', max_digits=10, decimal_places=2, default=0)
     is_free = models.BooleanField('Бесплатно', default=True)

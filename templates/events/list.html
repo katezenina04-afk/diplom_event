@@ -29,7 +29,12 @@
                     <strong>Место:</strong> {{ event.location }}<br>
                     <strong>Цена:</strong> {% if event.is_free %}Бесплатно{% else %}{{ event.price }} руб.{% endif %}
                 </p>
-                <a href="{% url 'event_detail' event.id %}" class="btn btn-primary">Подробнее</a>
+                {% if event.category %}
+                    <span class="badge bg-info">{{ event.category.name }}</span>
+                {% endif %}
+                <div class="mt-2">
+                    <a href="{% url 'event_detail' event.id %}" class="btn btn-primary btn-sm">Подробнее</a>
+                </div>
             </div>
         </div>
     </div>

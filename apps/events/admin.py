@@ -17,15 +17,15 @@ class RegistrationInline(admin.TabularInline):
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):
     list_display = ('title', 'start_datetime', 'location', 'creator', 'status', 'get_participants_count')
-    list_filter = ('status', 'start_datetime', 'categories')
+    list_filter = ('status', 'start_datetime', 'category')
     search_fields = ('title', 'description', 'location')
     date_hierarchy = 'start_datetime'
-    filter_horizontal = ('categories',)
+    filter_horizontal = ('category',)
     inlines = [RegistrationInline]
     fieldsets = (
         ('Основное', {'fields': ('title', 'description', 'image', 'creator', 'status')}),
         ('Время и место', {'fields': ('start_datetime', 'end_datetime', 'location')}),  # убрали latitude, longitude
-        ('Категории и цена', {'fields': ('categories', 'price', 'is_free', 'max_participants')}),
+        ('Категории и цена', {'fields': ('category', 'price', 'is_free', 'max_participants')}),
     )
     
     def get_participants_count(self, obj):
