@@ -24,7 +24,7 @@ class EventAdmin(admin.ModelAdmin):
     inlines = [RegistrationInline]
     fieldsets = (
         ('Основное', {'fields': ('title', 'description', 'image', 'creator', 'status')}),
-        ('Время и место', {'fields': ('start_datetime', 'end_datetime', 'location', 'latitude', 'longitude')}),
+        ('Время и место', {'fields': ('start_datetime', 'end_datetime', 'location')}),  # убрали latitude, longitude
         ('Категории и цена', {'fields': ('categories', 'price', 'is_free', 'max_participants')}),
     )
     

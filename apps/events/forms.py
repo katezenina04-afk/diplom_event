@@ -6,17 +6,14 @@ class EventForm(forms.ModelForm):
         model = Event
         fields = [
             'title', 'description', 'image', 
-            'start_datetime', 'end_datetime', 'location',
-            'latitude', 'longitude',
+            'start_datetime', 'end_datetime', 'location',  # убрали latitude, longitude
             'categories', 'price', 'is_free', 'max_participants'
         ]
         widgets = {
             'start_datetime': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
             'end_datetime': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
             'description': forms.Textarea(attrs={'rows': 5, 'class': 'form-control'}),
-            'location': forms.TextInput(attrs={'class': 'form-control'}),
-            'latitude': forms.NumberInput(attrs={'class': 'form-control', 'step': 'any'}),
-            'longitude': forms.NumberInput(attrs={'class': 'form-control', 'step': 'any'}),
+            'location': forms.TextInput(attrs={'class': 'form-control'}),  # только адрес
             'title': forms.TextInput(attrs={'class': 'form-control'}),
             'categories': forms.SelectMultiple(attrs={'class': 'form-select', 'size': 5}),
             'price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
@@ -28,9 +25,7 @@ class EventForm(forms.ModelForm):
             'image': 'Афиша',
             'start_datetime': 'Дата и время начала',
             'end_datetime': 'Дата и время окончания',
-            'location': 'Место проведения',
-            'latitude': 'Широта',
-            'longitude': 'Долгота',
+            'location': 'Место проведения (адрес)',
             'categories': 'Категории',
             'price': 'Цена (руб)',
             'is_free': 'Бесплатное мероприятие',

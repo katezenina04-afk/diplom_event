@@ -30,10 +30,7 @@ class Event(models.Model):
     
     start_datetime = models.DateTimeField('Дата и время начала')
     end_datetime = models.DateTimeField('Дата и время окончания', blank=True, null=True)
-    location = models.CharField('Место проведения', max_length=255)
-    
-    latitude = models.FloatField('Широта', blank=True, null=True)
-    longitude = models.FloatField('Долгота', blank=True, null=True)
+    location = models.CharField('Место проведения', max_length=255)  # только адрес
     
     categories = models.ManyToManyField(Category, blank=True, verbose_name='Категории')
     
