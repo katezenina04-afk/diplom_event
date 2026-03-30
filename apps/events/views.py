@@ -1,14 +1,11 @@
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.utils import timezone
 from datetime import date
 import calendar
-
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import get_object_or_404, redirect, render
-from django.utils import timezone
-from django.views.decorators.http import require_POST
-
+from .models import Event, Category, Registration
 from .forms import EventForm
-from .models import Category, Event, Registration
 
 
 def event_list(request):
@@ -41,33 +38,33 @@ def event_calendar(request, year=None, month=None):
         year = timezone.now().year
     if not month:
         month = timezone.now().month
-
+    
     year = int(year)
     month = int(month)
-
+    
     first_day = date(year, month, 1)
     _, last_day = calendar.monthrange(year, month)
-
+    
     events = Event.objects.filter(
         start_datetime__year=year,
         start_datetime__month=month,
         status='published'
     ).order_by('start_datetime')
-
+    
     events_by_day = {}
     for event in events:
         day = event.start_datetime.day
         if day not in events_by_day:
             events_by_day[day] = []
         events_by_day[day].append(event)
-
+    
     calendar_data = []
     week = []
     first_weekday = first_day.weekday()
-
+    
     for _ in range(first_weekday):
         week.append({'day': None, 'events': []})
-
+    
     for day in range(1, last_day + 1):
         week.append({
             'day': day,
@@ -77,28 +74,28 @@ def event_calendar(request, year=None, month=None):
         if len(week) == 7:
             calendar_data.append(week)
             week = []
-
+    
     if week:
         while len(week) < 7:
             week.append({'day': None, 'events': []})
         calendar_data.append(week)
-
+    
     month_names = {1: 'Январь', 2: 'Февраль', 3: 'Март', 4: 'Апрель',
                    5: 'Май', 6: 'Июнь', 7: 'Июль', 8: 'Август',
                    9: 'Сентябрь', 10: 'Октябрь', 11: 'Ноябрь', 12: 'Декабрь'}
-
+    
     prev_month = month - 1
     prev_year = year
     if prev_month == 0:
         prev_month = 12
         prev_year = year - 1
-
+    
     next_month = month + 1
     next_year = year
     if next_month == 13:
         next_month = 1
         next_year = year + 1
-
+    
     context = {
         'calendar_data': calendar_data,
         'month_name': month_names[month],
@@ -149,7 +146,6 @@ def edit_event(request, pk):
 
 
 @login_required
-@require_POST
 def delete_event(request, pk):
     event = get_object_or_404(Event, pk=pk, creator=request.user)
     event.delete()
@@ -164,33 +160,27 @@ def my_registrations(request):
 
 
 @login_required
-@require_POST
 def register_for_event(request, pk):
     event = get_object_or_404(Event, pk=pk)
-
+    
     if event.status != 'published':
         messages.error(request, 'Мероприятие недоступно для записи')
         return redirect('event_detail', pk=pk)
-
-    if event.start_datetime <= timezone.now():
-        messages.error(request, 'Запись доступна только для будущих мероприятий')
-        return redirect('event_detail', pk=pk)
-
+    
     if Registration.objects.filter(event=event, user=request.user).exists():
         messages.warning(request, 'Вы уже записаны на это мероприятие')
         return redirect('event_detail', pk=pk)
-
+    
     if event.is_full():
         messages.error(request, 'Все места заняты')
         return redirect('event_detail', pk=pk)
-
+    
     reg = Registration.objects.create(event=event, user=request.user, status='confirmed')
     messages.success(request, f'Вы успешно записаны! Ваш код для входа: {reg.entry_code}')
     return redirect('event_detail', pk=pk)
 
 
 @login_required
-@require_POST
 def cancel_registration(request, pk):
     registration = get_object_or_404(Registration, pk=pk, user=request.user)
     event_title = registration.event.title
@@ -201,14 +191,11 @@ def cancel_registration(request, pk):
 
 @login_required
 def recommendations(request):
-    # Временно показываем просто последние мероприятия
-    # Позже можно добавить интересы через отдельную модель
-
     registered_events = Registration.objects.filter(user=request.user).values_list('event_id', flat=True)
-
+    
     recommended = Event.objects.filter(
         status='published',
         start_datetime__gt=timezone.now()
     ).exclude(id__in=registered_events).order_by('start_datetime')[:10]
-
+    
     return render(request, 'events/recommendations.html', {'recommendations': recommended})

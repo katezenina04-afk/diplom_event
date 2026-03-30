@@ -1,19 +1,24 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from .models import User
 
-from .models import SpecialistProfile, User
-
-
-@admin.register(User)
 class CustomUserAdmin(UserAdmin):
-    fieldsets = UserAdmin.fieldsets + (
-        ('Дополнительно', {'fields': ('role', 'phone')}),
+    list_display = ('username', 'email', 'role', 'is_staff', 'is_active')
+    list_filter = ('role', 'is_staff', 'is_active')
+    fieldsets = (
+        (None, {'fields': ('username', 'password')}),
+        ('Личная информация', {'fields': ('email', 'phone')}),
+        ('Права', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
+        ('Роль', {'fields': ('role',)}),
+        ('Важные даты', {'fields': ('last_login', 'date_joined')}),
     )
-    list_display = ('username', 'email', 'role', 'is_staff')
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': ('username', 'email', 'phone', 'password1', 'password2', 'role'),
+        }),
+    )
+    search_fields = ('username', 'email')
+    ordering = ('username',)
 
-
-@admin.register(SpecialistProfile)
-class SpecialistProfileAdmin(admin.ModelAdmin):
-    list_display = ('full_name', 'specialization', 'user', 'is_verified', 'moderation_status')
-    list_filter = ('is_verified', 'moderation_status', 'specialization')
-    search_fields = ('full_name', 'specialization', 'user__username')
+admin.site.register(User, CustomUserAdmin)

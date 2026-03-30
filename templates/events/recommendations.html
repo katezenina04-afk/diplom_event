@@ -11,6 +11,8 @@
         <div class="card h-100">
             {% if event.image %}
                 <img src="{{ event.image.url }}" class="card-img-top" alt="{{ event.title }}" style="height: 150px; object-fit: cover;">
+            {% else %}
+                <div class="bg-light text-center py-3">Нет изображения</div>
             {% endif %}
             <div class="card-body">
                 <h5>{{ event.title }}</h5>
@@ -22,8 +24,7 @@
     </div>
     {% empty %}
     <div class="col">
-        <p>Пока нет рекомендаций. Заполните свой профиль и добавьте интересы.</p>
-        <a href="{% url 'profile' %}" class="btn btn-primary">Заполнить профиль</a>
+        <p>Пока нет рекомендаций. Загляните позже!</p>
     </div>
     {% endfor %}
 </div>

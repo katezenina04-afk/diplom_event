@@ -25,15 +25,12 @@
                 <p><strong>Цена:</strong> {% if event.is_free %}Бесплатно{% else %}{{ event.price }} руб.{% endif %}</p>
                 <p><strong>Участников:</strong> {{ event.get_participants_count }}{% if event.max_participants %} / {{ event.max_participants }}{% endif %}</p>
                 <p><strong>Организатор:</strong> {{ event.creator.username }}</p>
-
+                
                 {% if user.is_authenticated %}
                     {% if event.creator == user %}
                         <div class="d-grid gap-2">
                             <a href="{% url 'edit_event' event.id %}" class="btn btn-warning">Редактировать</a>
-                            <form method="post" action="{% url 'delete_event' event.id %}" onsubmit="return confirm('Удалить мероприятие?');">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-danger w-100">Удалить</button>
-                            </form>
+                            <a href="{% url 'delete_event' event.id %}" class="btn btn-danger" onclick="return confirm('Удалить мероприятие?')">Удалить</a>
                         </div>
                     {% else %}
                         {% if is_registered %}
@@ -43,15 +40,9 @@
                                     <p class="mb-0 mt-2"><strong>Код для входа:</strong> {{ registration.entry_code }}</p>
                                 {% endif %}
                             </div>
-                            <form method="post" action="{% url 'cancel_registration' registration.id %}" onsubmit="return confirm('Отменить запись?');">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-danger w-100">Отменить запись</button>
-                            </form>
+                            <a href="{% url 'cancel_registration' registration.id %}" class="btn btn-danger w-100" onclick="return confirm('Отменить запись?')">Отменить запись</a>
                         {% else %}
-                            <form method="post" action="{% url 'register_for_event' event.id %}">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-success w-100">Записаться</button>
-                            </form>
+                            <a href="{% url 'register_for_event' event.id %}" class="btn btn-success w-100">Записаться</a>
                         {% endif %}
                     {% endif %}
                 {% else %}

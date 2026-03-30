@@ -3,11 +3,21 @@
 {% block title %}Редактировать: {{ event.title }}{% endblock %}
 
 {% block content %}
-<h1>Редактировать: {{ event.title }}</h1>
-<form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn btn-success">Сохранить</button>
-    <a href="{% url 'event_detail' event.id %}" class="btn btn-secondary">Отмена</a>
-</form>
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header bg-warning">
+                <h4 class="mb-0">Редактировать: {{ event.title }}</h4>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <button type="submit" class="btn btn-success">Сохранить</button>
+                    <a href="{% url 'event_detail' event.id %}" class="btn btn-secondary">Отмена</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

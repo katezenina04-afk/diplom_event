@@ -13,14 +13,15 @@
             <th>Место</th>
             <th>Код для входа</th>
             <th></th>
-        </thead>
+        </tr>
+    </thead>
     <tbody>
         {% for reg in registrations %}
         <tr>
             <td><a href="{% url 'event_detail' reg.event.id %}">{{ reg.event.title }}</a></td>
             <td>{{ reg.event.start_datetime|date:"d.m.Y H:i" }}</td>
             <td>{{ reg.event.location }}</td>
-            <td><strong>{{ reg.entry_code }}</strong></td>
+            <td><strong class="text-success">{{ reg.entry_code }}</strong></td>
             <td>
                 <a href="{% url 'cancel_registration' reg.id %}" class="btn btn-sm btn-danger" onclick="return confirm('Отменить запись?')">Отменить</a>
             </td>
