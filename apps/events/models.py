@@ -19,6 +19,7 @@ class Category(models.Model):
 class Event(models.Model):
     STATUS_CHOICES = [
         ('draft', 'Черновик'),
+        ('pending', 'На модерации'),
         ('published', 'Опубликовано'),
         ('cancelled', 'Отменено'),
         ('completed', 'Завершено'),
@@ -77,6 +78,7 @@ class Event(models.Model):
 
 class Registration(models.Model):
     STATUS_CHOICES = [
+        ('pending', 'Ожидает подтверждения'),  # новый статус
         ('confirmed', 'Подтверждено'),
         ('cancelled', 'Отменено'),
         ('attended', 'Посетил'),
@@ -85,9 +87,11 @@ class Registration(models.Model):
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='registrations')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='event_registrations')
     
-    status = models.CharField('Статус', max_length=20, choices=STATUS_CHOICES, default='confirmed')
+    status = models.CharField('Статус', max_length=20, choices=STATUS_CHOICES, default='pending')
     
     entry_code = models.CharField('Код для входа', max_length=6, blank=True)
+    
+    is_invited = models.BooleanField('Приглашён организатором', default=False)  # новое поле
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -103,7 +107,7 @@ class Registration(models.Model):
         super().save(*args, **kwargs)
     
     def __str__(self):
-        return f"{self.user.username} → {self.event.title}"
+        return f"{self.user.username} → {self.event.title} ({self.get_status_display()})"
 
 class Comment(models.Model):
     """Комментарий к мероприятию"""
@@ -178,6 +182,7 @@ class Notification(models.Model):
         ('registration_confirmed', 'Запись подтверждена'),
         ('registration_cancelled', 'Запись отменена'),
         ('event_cancelled', 'Мероприятие отменено'),
+        ('invitation', 'Приглашение на мероприятие'),
     ]
     
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='notifications')

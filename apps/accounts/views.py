@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import login, authenticate, update_session_auth_hash
-from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
+from django.contrib.auth import login, authenticate
+from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import UserRegistrationForm, ProfileForm
@@ -44,7 +44,6 @@ def profile_view(request):
     return render(request, 'accounts/profile.html')
 
 
-# НОВОЕ ПРЕДСТАВЛЕНИЕ ДЛЯ РЕДАКТИРОВАНИЯ ПРОФИЛЯ
 @login_required
 def edit_profile(request):
     if request.method == 'POST':

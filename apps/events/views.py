@@ -10,6 +10,7 @@ import calendar
 from .models import Event, Category, Registration, Comment, Like, Review, Favorite, Notification
 from .forms import EventForm, CommentForm, ReviewForm
 from django.http import JsonResponse
+from accounts.models import User
 
 
 def event_list(request):
@@ -85,6 +86,8 @@ def event_detail(request, pk):
     user_favorited = False
     user_registered = False
     user_registered_attended = False
+    has_pending_invitation = False  # новая переменная
+    
     event.views_count += 1
     event.save(update_fields=['views_count'])
     
@@ -92,7 +95,9 @@ def event_detail(request, pk):
         registration = Registration.objects.filter(event=event, user=request.user).first()
         is_registered = registration is not None
         user_registered = registration is not None
-        user_registered_attended = registration is not None and registration.status == 'attended'
+        if registration:
+            user_registered_attended = registration.status == 'attended'
+            has_pending_invitation = registration.status == 'pending' and registration.is_invited
         user_liked = Like.objects.filter(event=event, user=request.user).exists()
         user_favorited = Favorite.objects.filter(event=event, user=request.user).exists()
     
@@ -104,6 +109,7 @@ def event_detail(request, pk):
         'user_favorited': user_favorited,
         'user_registered': user_registered,
         'user_registered_attended': user_registered_attended,
+        'has_pending_invitation': has_pending_invitation,  # новая переменная
     }
     return render(request, 'events/detail.html', context)
 
@@ -349,7 +355,6 @@ def toggle_like(request, event_id):
         'likes_count': event.likes.count()
     })
 
-
 @login_required
 def add_review(request, event_id):
     event = get_object_or_404(Event, pk=event_id)
@@ -386,7 +391,6 @@ def add_review(request, event_id):
             messages.error(request, 'Ошибка при сохранении отзыва')
     
     return redirect('event_detail', pk=event_id)
-
 
 @login_required
 def delete_review(request, review_id):
@@ -435,7 +439,6 @@ def create_notification(user, notification_type, title, message, link=''):
         link=link
     )
 
-
 @login_required
 def notifications_list(request):
     notifications = Notification.objects.filter(user=request.user)
@@ -472,3 +475,116 @@ def event_statistics(request, pk):
         'stats': stats,
     }
     return render(request, 'events/statistics.html', context)
+
+def search_specialists(request, event_id):
+    """Поиск специалистов для приглашения на мероприятие"""
+    event = get_object_or_404(Event, pk=event_id, creator=request.user)
+    
+    # Поиск по навыкам и опыту
+    query = request.GET.get('q', '')
+    
+    specialists = User.objects.filter(
+        looking_for_work=True,
+        role='user'  # обычные пользователи, не админы
+    ).exclude(id=request.user.id)  # исключаем себя
+    
+    if query:
+        specialists = specialists.filter(
+            Q(skills__icontains=query) |
+            Q(experience__icontains=query)
+        ).distinct()
+    
+    # Ранжируем по релевантности
+    specialists = specialists.annotate(
+        relevance = (
+            models.Case(
+                models.When(skills__icontains=query, then=models.Value(10)),
+                models.When(experience__icontains=query, then=models.Value(5)),
+                default=models.Value(0),
+                output_field=models.IntegerField()
+            )
+        )
+    ).order_by('-relevance')
+    
+    context = {
+        'event': event,
+        'specialists': specialists,
+        'query': query,
+    }
+    return render(request, 'events/invite_specialists.html', context)
+
+
+@login_required
+def invite_specialist(request, event_id, specialist_id):
+    """Пригласить специалиста на мероприятие"""
+    event = get_object_or_404(Event, pk=event_id, creator=request.user)
+    specialist = get_object_or_404(User, pk=specialist_id)
+    
+    # Проверяем, что специалист ищет работу
+    if not specialist.looking_for_work:
+        messages.warning(request, f'{specialist.username} не ищет работу')
+        return redirect('search_specialists', event_id=event.id)
+    
+    # Проверяем, не записан ли уже
+    existing = Registration.objects.filter(event=event, user=specialist).first()
+    if existing:
+        if existing.status == 'confirmed':
+            messages.warning(request, f'{specialist.username} уже записан на это мероприятие')
+        elif existing.status == 'pending':
+            messages.warning(request, f'{specialist.username} уже приглашён')
+        return redirect('search_specialists', event_id=event.id)
+    
+    # Создаём запись в статусе pending (ожидает подтверждения)
+    registration = Registration.objects.create(
+        event=event,
+        user=specialist,
+        status='pending',
+        is_invited=True
+    )
+    
+    # Получаем сообщение
+    message = request.GET.get('message', '') or request.POST.get('message', '')
+    
+    # Создаём уведомление
+    create_notification(
+    user=specialist,
+    notification_type='invitation',
+    title=f'Приглашение на мероприятие "{event.title}"',
+    message=f'{request.user.username} приглашает вас на мероприятие "{event.title}".\n\n{message}' if message else f'{request.user.username} приглашает вас на мероприятие "{event.title}".',
+    link=f'/events/accept-invitation/{registration.id}/'  # вот так
+)
+    
+    messages.success(request, f'Приглашение отправлено пользователю {specialist.username}')
+    return redirect('edit_event', pk=event.id)
+
+@login_required
+def accept_invitation(request, registration_id):
+    """Принять приглашение на мероприятие"""
+    print(f"DEBUG: accept_invitation called with registration_id={registration_id}")
+    registration = get_object_or_404(Registration, pk=registration_id, user=request.user, status='pending')
+    print(f"DEBUG: registration found: {registration}")
+    
+    # Меняем статус на confirmed
+    registration.status = 'confirmed'
+    registration.save()
+    
+    messages.success(request, f'Вы приняли приглашение на мероприятие "{registration.event.title}"! Ваш код для входа: {registration.entry_code}')
+    
+    return redirect('event_detail', pk=registration.event.id)
+
+def events_map(request):
+    """Карта всех мероприятий"""
+    events = Event.objects.filter(status='published')
+    
+    # Преобразуем QuerySet в список словарей для JSON
+    events_data = []
+    for event in events:
+        events_data.append({
+            'id': event.id,
+            'title': event.title,
+            'location': event.location,
+            'start_datetime': event.start_datetime.strftime('%d.%m.%Y %H:%M'),
+            'url': f'/events/{event.id}/',
+        })
+    
+    return render(request, 'events/map.html', {'events_data': events_data})

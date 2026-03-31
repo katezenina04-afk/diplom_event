@@ -24,4 +24,8 @@ urlpatterns = [
     path('favorites/', views.favorites_list, name='favorites_list'),
     path('notifications/', views.notifications_list, name='notifications_list'),
     path('statistics/<int:pk>/', views.event_statistics, name='event_statistics'),
+    path('search-specialists/<int:event_id>/', views.search_specialists, name='search_specialists'),
+    path('invite-specialist/<int:event_id>/<int:specialist_id>/', views.invite_specialist, name='invite_specialist'),
+    path('accept-invitation/<int:registration_id>/', views.accept_invitation, name='accept_invitation'),
+    path('map/', views.events_map, name='events_map'),
 ]

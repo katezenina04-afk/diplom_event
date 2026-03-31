@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}Поиск специалистов для {{ event.title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <h1>Поиск специалистов</h1>
+        <p>Мероприятие: <strong>{{ event.title }}</strong></p>
+        
+        <form method="get" class="mb-4">
+            <div class="input-group">
+                <input type="text" name="q" class="form-control" placeholder="Поиск по навыкам или опыту..." value="{{ query }}">
+                <button type="submit" class="btn btn-primary">Найти</button>
+            </div>
+        </form>
+        
+        {% if specialists %}
+            <div class="list-group">
+                {% for specialist in specialists %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h5>{{ specialist.username }}</h5>
+                                <p class="mb-1"><strong>Навыки:</strong> {{ specialist.skills|default:"Не указаны"|truncatechars:100 }}</p>
+                                <p class="mb-1"><strong>Опыт:</strong> {{ specialist.experience|default:"Не указан"|truncatechars:100 }}</p>
+                                {% if specialist.portfolio %}
+                                    <p><a href="{{ specialist.portfolio }}" target="_blank">Портфолио</a></p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <a href="{% url 'invite_specialist' event.id specialist.id %}" class="btn btn-sm btn-success" onclick="return confirm('Отправить приглашение?')">
+                        Пригласить
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-muted">Специалисты не найдены. Попробуйте изменить поисковый запрос.</p>
+        {% endif %}
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Как это работает</h5>
+            </div>
+            <div class="card-body">
+                <p>Вы можете найти специалистов по их навыкам и опыту.</p>
+                <p>После отправки приглашения специалист получит уведомление и сможет принять решение.</p>
+                <p><strong>Совет:</strong> напишите персонализированное сообщение, чтобы увеличить шансы на согласие.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

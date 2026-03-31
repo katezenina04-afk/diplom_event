@@ -57,3 +57,12 @@ class ReviewForm(forms.ModelForm):
             'rating': 'Оценка',
             'text': 'Текст отзыва (необязательно)',
         }
+
+class InviteSpecialistForm(forms.Form):
+    """Форма для приглашения специалиста"""
+    specialist_id = forms.IntegerField(widget=forms.HiddenInput)
+    message = forms.CharField(
+        widget=forms.Textarea(attrs={'rows': 3, 'class': 'form-control', 'placeholder': 'Сообщение для специалиста...'}),
+        required=False,
+        label='Сообщение'
+    )

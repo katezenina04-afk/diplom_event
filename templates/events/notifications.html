@@ -3,24 +3,52 @@
 {% block title %}Уведомления{% endblock %}
 
 {% block content %}
-<h1>🔔 Уведомления</h1>
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
+            <li class="breadcrumb-item active">Уведомления</li>
+        </ol>
+    </nav>
 
-{% if notifications %}
-    <div class="list-group">
-        {% for notif in notifications %}
-            <div class="list-group-item {% if not notif.is_read %}list-group-item-primary{% endif %}">
-                <div class="d-flex justify-content-between">
-                    <strong>{{ notif.title }}</strong>
-                    <small class="text-muted">{{ notif.created_at|date:"d.m.Y H:i" }}</small>
-                </div>
-                <p class="mb-1">{{ notif.message }}</p>
-                {% if notif.link %}
-                    <a href="{{ notif.link }}" class="btn btn-sm btn-outline-primary mt-2">Перейти</a>
+    <h1>🔔 Уведомления</h1>
+
+    {% if notifications %}
+        <div class="list-group">
+            {% for notif in notifications %}
+                {% if notif.notification_type == 'invitation' %}
+                    <div class="list-group-item {% if not notif.is_read %}list-group-item-primary{% endif %}">
+                        <div class="d-flex justify-content-between">
+                            <strong>📨 {{ notif.title }}</strong>
+                            <small class="text-muted">{{ notif.created_at|date:"d.m.Y H:i" }}</small>
+                        </div>
+                        <p class="mb-2 mt-1">{{ notif.message|linebreaksbr }}</p>
+                        <div class="mt-2">
+                            <a href="{{ notif.link }}" class="btn btn-sm btn-success">
+                                <i class="bi bi-check-lg"></i> Принять
+                            </a>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="list-group-item {% if not notif.is_read %}list-group-item-primary{% endif %}">
+                        <div class="d-flex justify-content-between">
+                            <strong>{{ notif.title }}</strong>
+                            <small class="text-muted">{{ notif.created_at|date:"d.m.Y H:i" }}</small>
+                        </div>
+                        <p class="mb-1">{{ notif.message }}</p>
+                        {% if notif.link %}
+                            <a href="{{ notif.link }}" class="btn btn-sm btn-outline-primary mt-2">Перейти</a>
+                        {% endif %}
+                    </div>
                 {% endif %}
-            </div>
-        {% endfor %}
-    </div>
-{% else %}
-    <p class="text-muted">У вас пока нет уведомлений</p>
-{% endif %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info text-center py-5">
+            <i class="bi bi-bell-slash" style="font-size: 3rem;"></i>
+            <h4 class="mt-3">У вас пока нет уведомлений</h4>
+            <p class="mb-0">Когда появятся новые уведомления, они будут отображаться здесь.</p>
+        </div>
+    {% endif %}
+</div>
 {% endblock %}

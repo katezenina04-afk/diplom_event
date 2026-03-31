@@ -23,18 +23,31 @@ class UserRegistrationForm(UserCreationForm):
         return user
 
 
-# НОВАЯ ФОРМА ДЛЯ РЕДАКТИРОВАНИЯ ПРОФИЛЯ
 class ProfileForm(forms.ModelForm):
+    """Форма редактирования профиля"""
     class Meta:
         model = User
-        fields = ('username', 'email', 'phone')
+        fields = ('username', 'email', 'phone', 'skills', 'experience', 'portfolio', 'looking_for_work')
         widgets = {
             'username': forms.TextInput(attrs={'class': 'form-control'}),
             'email': forms.EmailInput(attrs={'class': 'form-control'}),
             'phone': forms.TextInput(attrs={'class': 'form-control'}),
+            'skills': forms.Textarea(attrs={'rows': 3, 'class': 'form-control', 'placeholder': 'Ведите, ассистент, работа с залом...'}),
+            'experience': forms.Textarea(attrs={'rows': 4, 'class': 'form-control', 'placeholder': 'Опишите ваш опыт...'}),
+            'portfolio': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://...'}),
+            'looking_for_work': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
         labels = {
             'username': 'Имя пользователя',
             'email': 'Электронная почта',
             'phone': 'Телефон',
+            'skills': 'Навыки',
+            'experience': 'Опыт работы',
+            'portfolio': 'Портфолио (ссылка)',
+            'looking_for_work': 'Ищу работу',
+        }
+        help_texts = {
+            'skills': 'Перечислите ваши ключевые навыки',
+            'experience': 'Опишите ваш опыт работы на мероприятиях',
+            'portfolio': 'Ссылка на видео или сайт с примерами работ',
         }

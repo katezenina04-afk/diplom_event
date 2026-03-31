@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Карта мероприятий{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
+            <li class="breadcrumb-item active">Карта мероприятий</li>
+        </ol>
+    </nav>
+
+    <h1>🗺️ Карта мероприятий</h1>
+    <p class="text-muted">На карте отмечены все предстоящие мероприятия</p>
+
+    <div id="map" style="width: 100%; height: 500px; border-radius: 8px;"></div>
+</div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+    // Данные мероприятий из Django
+    var eventsData = [
+        {% for event in events_data %}
+        {
+            id: {{ event.id }},
+            title: "{{ event.title|escapejs }}",
+            location: "{{ event.location|escapejs }}",
+            date: "{{ event.start_datetime|escapejs }}",
+            url: "{{ event.url|escapejs }}"
+        },
+        {% endfor %}
+    ];
+    
+    // Инициализация карты
+    var map = L.map('map').setView([55.751574, 37.573856], 10);
+    
+    // Добавляем заголовок Referer для обхода блокировки
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        referrerPolicy: 'origin'
+    }).addTo(map);
+    
+    // Альтернативный вариант — использовать другой источник карт (без блокировки)
+    // L.tileLayer('https://tile.openstreetmap.de/{z}/{x}/{y}.png', {
+    //     attribution: '&copy; OpenStreetMap contributors'
+    // }).addTo(map);
+    
+    // Обрабатываем мероприятия
+    eventsData.forEach(function(event) {
+        if (event.location) {
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(event.location)}&limit=1`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.length > 0) {
+                        var lat = data[0].lat;
+                        var lon = data[0].lon;
+                        
+                        L.marker([lat, lon])
+                            .addTo(map)
+                            .bindPopup(`
+                                <strong>${event.title}</strong><br>
+                                📍 ${event.location}<br>
+                                📅 ${event.date}<br>
+                                <a href="${event.url}" class="btn btn-sm btn-primary mt-2">Подробнее</a>
+                            `);
+                    }
+                })
+                .catch(error => console.error('Ошибка геокодирования:', error));
+        }
+    });
+</script>
+{% endblock %}

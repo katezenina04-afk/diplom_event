@@ -3,11 +3,12 @@ from django.contrib.auth.admin import UserAdmin
 from .models import User
 
 class CustomUserAdmin(UserAdmin):
-    list_display = ('username', 'email', 'role', 'is_staff', 'is_active')
-    list_filter = ('role', 'is_staff', 'is_active')
+    list_display = ('username', 'email', 'role', 'looking_for_work', 'is_staff', 'is_active')
+    list_filter = ('role', 'looking_for_work', 'is_staff', 'is_active')
     fieldsets = (
         (None, {'fields': ('username', 'password')}),
         ('Личная информация', {'fields': ('email', 'phone')}),
+        ('Профессиональная информация', {'fields': ('skills', 'experience', 'portfolio', 'looking_for_work')}),
         ('Права', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Роль', {'fields': ('role',)}),
         ('Важные даты', {'fields': ('last_login', 'date_joined')}),
