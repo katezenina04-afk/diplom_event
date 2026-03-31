@@ -32,13 +32,13 @@
                     <h5 class="mb-0">Статусы мероприятий</h5>
                 </div>
                 <div class="card-body">
-                    {% for name, count in status_stats.items %}
+                    {% for name, stats in status_stats.items %}
                         <div class="d-flex justify-content-between">
                             <span>{{ name }}:</span>
-                            <strong>{{ count }}</strong>
+                            <strong>{{ stats.count }} ({{ stats.percent }}%)</strong>
                         </div>
                         <div class="progress mb-2">
-                            <div class="progress-bar" style="width: {{ count|div:total_events|mul:100 }}%"></div>
+                            <div class="progress-bar" style="width: {{ stats.percent }}%"></div>
                         </div>
                     {% endfor %}
                 </div>
@@ -53,10 +53,10 @@
                     {% for stat in monthly_stats %}
                         <div class="d-flex justify-content-between">
                             <span>{{ stat.month|date:"F Y" }}:</span>
-                            <strong>{{ stat.count }}</strong>
+                            <strong>{{ stat.count }} ({{ stat.percent }}%)</strong>
                         </div>
                         <div class="progress mb-2">
-                            <div class="progress-bar bg-success" style="width: {{ stat.count|div:monthly_stats.0.count|mul:100 }}%"></div>
+                            <div class="progress-bar bg-success" style="width: {{ stat.percent }}%"></div>
                         </div>
                     {% empty %}
                         <p>Нет данных</p>
@@ -86,14 +86,14 @@
                     <tbody>
                         {% for item in data %}
                         <tr>
-                            <td>{{ item.event.title }}</td>
-                            <td>{{ item.event.start_datetime|date:"d.m.Y" }}</td>
-                            <td>{{ item.event.creator.username }}</td>
-                            <td>{{ item.participants }}</td>
-                            <td>{{ item.likes }}</td>
-                            <td>{{ item.favorites }}</td>
-                            <td>⭐ {{ item.avg_rating }}</td>
-                        </tr>
+                            <td>{{ item.event.title }}</a></td>
+                            <td>{{ item.event.start_datetime|date:"d.m.Y" }}</a></td>
+                            <td>{{ item.event.creator.username }}</a></td>
+                            <td>{{ item.participants }}</a></td>
+                            <td>{{ item.likes }}</a></td>
+                            <td>{{ item.favorites }}</a></td>
+                            <td>⭐ {{ item.avg_rating }}</a></td>
+                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>

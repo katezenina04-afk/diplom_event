@@ -11,7 +11,7 @@ from .models import Event, Category, Registration, Comment, Like, Review, Favori
 from .forms import EventForm, CommentForm, ReviewForm
 from django.http import JsonResponse
 from accounts.models import User
-
+from .recommender import generate_recommendations
 
 def event_list(request):
     """Афиша мероприятий с поиском, фильтрацией, сортировкой и пагинацией"""
@@ -289,14 +289,23 @@ def cancel_registration(request, pk):
 
 @login_required
 def recommendations(request):
-    registered_events = Registration.objects.filter(user=request.user).values_list('event_id', flat=True)
+    """ML-рекомендации для специалиста"""
+    if request.user.role != 'user':
+        # Если админ, показываем обычные рекомендации
+        registered_events = Registration.objects.filter(user=request.user).values_list('event_id', flat=True)
+        recommended = Event.objects.filter(
+            status='published',
+            start_datetime__gt=timezone.now()
+        ).exclude(id__in=registered_events).order_by('start_datetime')[:10]
+    else:
+        # ML-рекомендации
+        recommended = generate_recommendations(request.user, limit=10)
     
-    recommended = Event.objects.filter(
-        status='published',
-        start_datetime__gt=timezone.now()
-    ).exclude(id__in=registered_events).order_by('start_datetime')[:10]
-    
-    return render(request, 'events/recommendations.html', {'recommendations': recommended})
+    context = {
+        'recommendations': recommended,
+        'is_ml': True,
+    }
+    return render(request, 'events/recommendations.html', context)
 
 
 @login_required

@@ -66,6 +66,16 @@
                         {% endif %}
                     </div>
                     
+                    <div class="mb-3">
+                        <label for="id_specialization" class="form-label">Специализация (выберите категории)</label>
+                        <select name="specialization" id="id_specialization" class="form-select" multiple size="5">
+                            {% for cat in categories %}
+                                <option value="{{ cat.id }}" {% if cat in user.specialization.all %}selected{% endif %}>{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Выберите тематики, в которых вы специализируетесь</div>
+                    </div>
+
                     <div class="d-flex justify-content-between mt-4">
                         <a href="{% url 'profile' %}" class="btn btn-secondary">Отмена</a>
                         <button type="submit" class="btn btn-success">Сохранить</button>

@@ -68,12 +68,15 @@ def events_report(request):
             'avg_rating': event.reviews.aggregate(avg=models.Avg('rating'))['avg'] or 0,
         })
     
-    # Статистика по статусам
+    # Статистика по статусам с процентами
+    total_events = events.count()
     status_stats = {}
     for status_code, status_name in Event.STATUS_CHOICES:
-        status_stats[status_name] = Event.objects.filter(status=status_code).count()
+        count = Event.objects.filter(status=status_code).count()
+        percent = (count / total_events * 100) if total_events > 0 else 0
+        status_stats[status_name] = {'count': count, 'percent': round(percent, 1)}
     
-    # Статистика по месяцам
+    # Статистика по месяцам с процентами
     from django.db.models.functions import TruncMonth
     monthly_stats = Event.objects.filter(status='published').annotate(
         month=TruncMonth('start_datetime')
@@ -81,11 +84,22 @@ def events_report(request):
         count=Count('id')
     ).order_by('month')
     
+    # Для месячной статистики считаем проценты
+    total_monthly = sum(item['count'] for item in monthly_stats)
+    monthly_data = []
+    for item in monthly_stats:
+        percent = (item['count'] / total_monthly * 100) if total_monthly > 0 else 0
+        monthly_data.append({
+            'month': item['month'],
+            'count': item['count'],
+            'percent': round(percent, 1)
+        })
+    
     context = {
         'data': data,
         'status_stats': status_stats,
-        'monthly_stats': monthly_stats,
-        'total_events': events.count(),
+        'monthly_stats': monthly_data,
+        'total_events': total_events,
     }
     return render(request, 'reports/events_report.html', context)
 

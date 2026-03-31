@@ -15,6 +15,7 @@ class User(AbstractUser):
     experience = models.TextField('Опыт работы', blank=True, help_text='Опишите ваш опыт работы на мероприятиях')
     portfolio = models.URLField('Портфолио', blank=True, help_text='Ссылка на видео/сайт с примерами работ')
     looking_for_work = models.BooleanField('Ищу работу', default=False, help_text='Отметьте, если вы открыты для предложений')
+    specialization = models.ManyToManyField('events.Category', blank=True, verbose_name='Специализация')
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

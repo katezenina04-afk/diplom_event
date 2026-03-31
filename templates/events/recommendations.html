@@ -3,34 +3,82 @@
 {% block title %}Рекомендации{% endblock %}
 
 {% block content %}
-<h1>🎯 Рекомендации для вас</h1>
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
+            <li class="breadcrumb-item active">Рекомендации</li>
+        </ol>
+    </nav>
 
-<div class="row">
-    {% for event in recommendations %}
-    <div class="col-md-4 mb-3">
-        <div class="card h-100">
-            {% if event.image %}
-                <img src="{{ event.image.url }}" class="card-img-top" alt="{{ event.title }}" style="height: 150px; object-fit: cover;">
-            {% else %}
-                <div class="bg-light text-center py-3">Нет изображения</div>
-            {% endif %}
-            <div class="card-body">
-                <h5>{{ event.title }}</h5>
-                <p class="text-muted">{{ event.start_datetime|date:"d.m.Y H:i" }}</p>
-                <p>{{ event.location }}</p>
-                {% if event.category %}
-                    <span class="badge bg-info">{{ event.category.name }}</span>
-                {% endif %}
-                <div class="mt-2">
-                    <a href="{% url 'event_detail' event.id %}" class="btn btn-primary">Подробнее</a>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>🎯 Рекомендации для вас</h1>
+        <a href="{% url 'recommendations' %}" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-repeat"></i> Обновить
+        </a>
+    </div>
+
+    {% if is_ml %}
+    <div class="alert alert-success mb-4">
+        <i class="bi bi-cpu"></i> <strong>ML-рекомендации</strong> — сгенерированы с использованием <strong>TF-IDF векторизации</strong> и <strong>косинусной близости</strong>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        {% for rec in recommendations %}
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header {% if rec.percent_score %}bg-primary{% else %}bg-secondary{% endif %} text-white">
+                    <h5 class="mb-0">{{ rec.event.title }}</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        {{ rec.event.start_datetime|date:"d.m.Y H:i" }}
+                        {% if rec.event.location %}
+                            | 📍 {{ rec.event.location }}
+                        {% endif %}
+                    </p>
+                    <p>{{ rec.event.description|truncatechars:150 }}</p>
+                    
+                    {% if rec.reasons %}
+                        <div class="alert alert-info small mt-2">
+                            <strong>💡 Почему это вам подходит:</strong>
+                            <ul class="mb-0 mt-1">
+                                {% for reason in rec.reasons %}
+                                    <li>{{ reason }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                    
+                    {% if rec.percent_score %}
+                        <div class="mt-2">
+                            <div class="progress mb-2" style="height: 8px;">
+                                <div class="progress-bar bg-success" role="progressbar" 
+                                     style="width: {{ rec.percent_score }}%"></div>
+                            </div>
+                            <span class="badge bg-success">Совпадение: {{ rec.percent_score }}%</span>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-white">
+                    <a href="{% url 'event_detail' rec.event.id %}" class="btn btn-primary btn-sm">Подробнее</a>
+                    <a href="{% url 'register_for_event' rec.event.id %}" class="btn btn-success btn-sm">Записаться</a>
                 </div>
             </div>
         </div>
+        {% empty %}
+        <div class="col">
+            <div class="alert alert-info text-center">
+                <i class="bi bi-info-circle" style="font-size: 2rem;"></i>
+                <h4 class="mt-2">Пока нет рекомендаций</h4>
+                <p>Заполните свой профиль (навыки, опыт, специализацию), чтобы получать персональные рекомендации.</p>
+                <a href="{% url 'profile' %}" class="btn btn-primary mt-2">
+                    <i class="bi bi-pencil"></i> Заполнить профиль
+                </a>
+            </div>
+        </div>
+        {% endfor %}
     </div>
-    {% empty %}
-    <div class="col">
-        <p>Пока нет рекомендаций. Загляните позже!</p>
-    </div>
-    {% endfor %}
 </div>
 {% endblock %}
