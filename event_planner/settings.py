@@ -40,6 +40,7 @@ INSTALLED_APPS = [
 
     'accounts.apps.AccountsConfig',
     'events.apps.EventsConfig',
+    'reports.apps.ReportsConfig',
 ]
 
 MIDDLEWARE = [

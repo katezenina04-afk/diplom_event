@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}Отчёт по специалистам{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'reports_dashboard' %}">Отчёты</a></li>
+            <li class="breadcrumb-item active">Специалисты</li>
+        </ol>
+    </nav>
+
+    <h1>👥 Отчёт по специалистам</h1>
+
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Всего специалистов</h5>
+                    <p class="display-4">{{ total_specialists }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Всего мероприятий</h5>
+                    <p class="display-4">{{ total_events }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Всего участников</h5>
+                    <p class="display-4">{{ total_participants }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Детальная информация</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Специалист</th>
+                            <th>Email</th>
+                            <th>Мероприятий</th>
+                            <th>Участников</th>
+                            <th>Лайков</th>
+                            <th>Избранное</th>
+                            <th>Комментариев</th>
+                            <th>Рейтинг</th>
+                        </thead>
+                    <tbody>
+                        {% for item in data %}
+                        <tr>
+                            <td>{{ item.user.username }}</td>
+                            <td>{{ item.user.email }}</td>
+                            <td>{{ item.events_count }}</td>
+                            <td>{{ item.total_participants }}</td>
+                            <td>{{ item.total_likes }}</td>
+                            <td>{{ item.total_favorites }}</td>
+                            <td>{{ item.total_comments }}</td>
+                            <td>⭐ {{ item.avg_rating }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

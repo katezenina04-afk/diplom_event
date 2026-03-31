@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block title %}Отчёты{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
+            <li class="breadcrumb-item active">Отчёты</li>
+        </ol>
+    </nav>
+
+    <h1>📊 Панель отчётов</h1>
+    <p class="text-muted">Аналитика и статистика по работе платформы</p>
+
+    <div class="row mt-4">
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">👥 Специалисты</h5>
+                </div>
+                <div class="card-body">
+                    <p>Анализ активности организаторов мероприятий</p>
+                    <ul>
+                        <li>Количество созданных мероприятий</li>
+                        <li>Количество участников</li>
+                        <li>Рейтинг и отзывы</li>
+                    </ul>
+                    <a href="{% url 'specialist_report' %}" class="btn btn-primary">Перейти</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">📅 Мероприятия</h5>
+                </div>
+                <div class="card-body">
+                    <p>Статистика по мероприятиям</p>
+                    <ul>
+                        <li>Популярность по категориям</li>
+                        <li>Динамика по месяцам</li>
+                        <li>Активность участников</li>
+                    </ul>
+                    <a href="{% url 'events_report' %}" class="btn btn-success">Перейти</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">👤 Участники</h5>
+                </div>
+                <div class="card-body">
+                    <p>Анализ активности участников</p>
+                    <ul>
+                        <li>Количество записей</li>
+                        <li>Посещённые мероприятия</li>
+                        <li>Популярные категории</li>
+                    </ul>
+                    <a href="{% url 'participants_report' %}" class="btn btn-info">Перейти</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-3">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">📥 Экспорт данных</h5>
+                </div>
+                <div class="card-body">
+                    <p>Скачать данные в формате Excel</p>
+                    <a href="{% url 'export_events_excel' %}" class="btn btn-outline-success me-2">
+                        <i class="bi bi-file-excel"></i> Экспорт мероприятий
+                    </a>
+                    <a href="{% url 'export_specialists_excel' %}" class="btn btn-outline-success">
+                        <i class="bi bi-file-excel"></i> Экспорт специалистов
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

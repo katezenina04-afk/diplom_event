@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block title %}Отчёт по мероприятиям{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'reports_dashboard' %}">Отчёты</a></li>
+            <li class="breadcrumb-item active">Мероприятия</li>
+        </ol>
+    </nav>
+
+    <h1>📅 Отчёт по мероприятиям</h1>
+
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Всего мероприятий</h5>
+                    <p class="display-4">{{ total_events }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Статусы мероприятий</h5>
+                </div>
+                <div class="card-body">
+                    {% for name, count in status_stats.items %}
+                        <div class="d-flex justify-content-between">
+                            <span>{{ name }}:</span>
+                            <strong>{{ count }}</strong>
+                        </div>
+                        <div class="progress mb-2">
+                            <div class="progress-bar" style="width: {{ count|div:total_events|mul:100 }}%"></div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Динамика по месяцам</h5>
+                </div>
+                <div class="card-body">
+                    {% for stat in monthly_stats %}
+                        <div class="d-flex justify-content-between">
+                            <span>{{ stat.month|date:"F Y" }}:</span>
+                            <strong>{{ stat.count }}</strong>
+                        </div>
+                        <div class="progress mb-2">
+                            <div class="progress-bar bg-success" style="width: {{ stat.count|div:monthly_stats.0.count|mul:100 }}%"></div>
+                        </div>
+                    {% empty %}
+                        <p>Нет данных</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Список мероприятий</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Название</th>
+                            <th>Дата</th>
+                            <th>Организатор</th>
+                            <th>Участников</th>
+                            <th>Лайков</th>
+                            <th>Избранное</th>
+                            <th>Рейтинг</th>
+                        </thead>
+                    <tbody>
+                        {% for item in data %}
+                        <tr>
+                            <td>{{ item.event.title }}</td>
+                            <td>{{ item.event.start_datetime|date:"d.m.Y" }}</td>
+                            <td>{{ item.event.creator.username }}</td>
+                            <td>{{ item.participants }}</td>
+                            <td>{{ item.likes }}</td>
+                            <td>{{ item.favorites }}</td>
+                            <td>⭐ {{ item.avg_rating }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

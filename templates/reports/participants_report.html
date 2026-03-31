@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}Отчёт по участникам{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'reports_dashboard' %}">Отчёты</a></li>
+            <li class="breadcrumb-item active">Участники</li>
+        </ol>
+    </nav>
+
+    <h1>👤 Отчёт по участникам</h1>
+
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Всего участников</h5>
+                    <p class="display-4">{{ total_participants }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Всего записей</h5>
+                    <p class="display-4">{{ total_registrations }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Активность участников</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Участник</th>
+                            <th>Email</th>
+                            <th>Записей</th>
+                            <th>Посещено</th>
+                            <th>Популярные категории</th>
+                            <th>Ограничения</th>
+                         </thead>
+                    <tbody>
+                        {% for item in data %}
+                        <tr>
+                            <td>{{ item.user.username }}</td>
+                            <td>{{ item.user.email }}</td>
+                            <td>{{ item.registrations_count }}</td>
+                            <td>{{ item.events_attended }}</td>
+                            <td>
+                                {% for cat, count in item.top_categories %}
+                                    <span class="badge bg-secondary">{{ cat }} ({{ count }})</span>
+                                {% endfor %}
+                            </td>
+                            <td>
+                                {% if item.has_restrictions %}
+                                    <span class="badge bg-warning">Есть</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Нет</span>
+                                {% endif %}
+                            </td>
+                         </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
