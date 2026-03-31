@@ -25,6 +25,7 @@
                     <a href="{% url 'event_detail' event.id %}" class="btn btn-sm btn-primary">Подробнее</a>
                     <a href="{% url 'edit_event' event.id %}" class="btn btn-sm btn-warning">Ред.</a>
                     <a href="{% url 'delete_event' event.id %}" class="btn btn-sm btn-danger" onclick="return confirm('Удалить?')">Удалить</a>
+                    <a href="{% url 'event_statistics' event.id %}" class="btn btn-sm btn-info">Статистика</a>
                 </div>
             </div>
         </div>

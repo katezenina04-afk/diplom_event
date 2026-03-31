@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block title %}Уведомления{% endblock %}
+
+{% block content %}
+<h1>🔔 Уведомления</h1>
+
+{% if notifications %}
+    <div class="list-group">
+        {% for notif in notifications %}
+            <div class="list-group-item {% if not notif.is_read %}list-group-item-primary{% endif %}">
+                <div class="d-flex justify-content-between">
+                    <strong>{{ notif.title }}</strong>
+                    <small class="text-muted">{{ notif.created_at|date:"d.m.Y H:i" }}</small>
+                </div>
+                <p class="mb-1">{{ notif.message }}</p>
+                {% if notif.link %}
+                    <a href="{{ notif.link }}" class="btn btn-sm btn-outline-primary mt-2">Перейти</a>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <p class="text-muted">У вас пока нет уведомлений</p>
+{% endif %}
+{% endblock %}

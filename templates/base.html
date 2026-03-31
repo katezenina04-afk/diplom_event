@@ -21,7 +21,16 @@
                     {% if user.is_authenticated %}
                         <li class="nav-item"><a class="nav-link" href="{% url 'my_events' %}">Мои мероприятия</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'my_registrations' %}">Мои записи</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'favorites_list' %}">Избранное</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'recommendations' %}">Рекомендации</a></li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'notifications_list' %}"> 
+                                <i class="bi bi-bell"></i> Уведомления
+                                {% if user.is_authenticated and user.notifications.filter(is_read=False).count > 0 %}
+                                    <span class="badge bg-danger">{{ user.notifications.filter(is_read=False).count }}</span>
+                                {% endif %}
+                            </a>
+                        </li>
                     {% endif %}
                 </ul>
                 <ul class="navbar-nav ms-auto">
@@ -57,6 +66,47 @@
             {% endfor %}
         {% endif %}
         {% block content %}{% endblock %}
-    </div>
+    </div> 
+        <!-- Подвал -->
+    <footer class="bg-dark text-white mt-5 py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <h5>Афиша мероприятий</h5>
+                    <p class="small">Платформа для поиска и организации мероприятий. Создавайте события, находите интересные встречи, записывайтесь и участвуйте!</p>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <h5>Быстрые ссылки</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="{% url 'event_list' %}" class="text-white-50 text-decoration-none">Афиша</a></li>
+                        <li><a href="{% url 'event_calendar' %}" class="text-white-50 text-decoration-none">Календарь</a></li>
+                        {% if user.is_authenticated %}
+                            <li><a href="{% url 'my_events' %}" class="text-white-50 text-decoration-none">Мои мероприятия</a></li>
+                            <li><a href="{% url 'my_registrations' %}" class="text-white-50 text-decoration-none">Мои записи</a></li>
+                            <li><a href="{% url 'favorites_list' %}" class="text-white-50 text-decoration-none">Избранное</a></li>
+                            <li><a href="{% url 'recommendations' %}" class="text-white-50 text-decoration-none">Рекомендации</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <h5>Контакты</h5>
+                    <ul class="list-unstyled">
+                        <li><i class="bi bi-envelope me-2"></i> 786418@mail.ru</li>
+                        <li><i class="bi bi-telephone me-2"></i> +7 (842) 227-85-15</li>
+                        <li><i class="bi bi-github me-2"></i> <a href="#" class="text-white-50 text-decoration-none">GitHub</a></li>
+                    </ul>
+                    <div class="mt-2">
+                        <a href="#" class="text-white-50 me-3"><i class="bi bi-telegram"></i></a>
+                        <a href="#" class="text-white-50 me-3"><i class="bi bi-vk"></i></a>
+                        <a href="#" class="text-white-50"><i class="bi bi-youtube"></i></a>
+                    </div>
+                </div>
+            </div>
+            <hr class="bg-secondary">
+            <div class="text-center small">
+                &copy; 2026 Афиша мероприятий. Все права защищены.
+            </div>
+        </div>
+    </footer>
 </body>
 </html>

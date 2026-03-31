@@ -1,5 +1,6 @@
 from django import forms
 from .models import Event
+from .models import Event, Category, Registration, Comment, Like, Review, Favorite
 
 class EventForm(forms.ModelForm):
     class Meta:
@@ -31,4 +32,28 @@ class EventForm(forms.ModelForm):
             'price': 'Цена (руб)',
             'is_free': 'Бесплатное мероприятие',
             'max_participants': 'Максимум участников',
+        }
+
+class CommentForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        fields = ('text',)
+        widgets = {
+            'text': forms.Textarea(attrs={'rows': 3, 'class': 'form-control', 'placeholder': 'Напишите комментарий...'}),
+        }
+        labels = {
+            'text': '',
+        }
+
+class ReviewForm(forms.ModelForm):
+    class Meta:
+        model = Review
+        fields = ('rating', 'text')
+        widgets = {
+            'rating': forms.Select(attrs={'class': 'form-select'}),
+            'text': forms.Textarea(attrs={'rows': 3, 'class': 'form-control', 'placeholder': 'Ваш отзыв...'}),
+        }
+        labels = {
+            'rating': 'Оценка',
+            'text': 'Текст отзыва (необязательно)',
         }

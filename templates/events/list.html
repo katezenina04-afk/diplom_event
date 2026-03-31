@@ -5,14 +5,52 @@
 {% block content %}
 <h1>Афиша мероприятий</h1>
 
-{% if categories %}
-<div class="mb-3">
-    {% for cat in categories %}
-        <span class="badge bg-secondary me-1">{{ cat.name }}</span>
-    {% endfor %}
-</div>
-{% endif %}
+<!-- ФОРМА ПОИСКА И ФИЛЬТРОВ -->
+<form method="get" class="row g-3 mb-4">
+    <!-- Поиск -->
+    <div class="col-md-4">
+        <input type="text" name="q" class="form-control" placeholder="Поиск по названию, описанию, месту..." value="{{ q }}">
+    </div>
+    
+    <!-- Фильтр по категории -->
+    <div class="col-md-2">
+        <select name="category" class="form-select">
+            <option value="">Все категории</option>
+            {% for cat in categories %}
+                <option value="{{ cat.id }}" {% if selected_category == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    
+    <!-- Фильтр по дате -->
+    <div class="col-md-2">
+        <select name="date" class="form-select">
+            <option value="">Все даты</option>
+            <option value="today" {% if date_filter == 'today' %}selected{% endif %}>Сегодня</option>
+            <option value="tomorrow" {% if date_filter == 'tomorrow' %}selected{% endif %}>Завтра</option>
+            <option value="week" {% if date_filter == 'week' %}selected{% endif %}>Эта неделя</option>
+            <option value="month" {% if date_filter == 'month' %}selected{% endif %}>Этот месяц</option>
+        </select>
+    </div>
+    
+    <!-- Сортировка -->
+    <div class="col-md-2">
+        <select name="sort" class="form-select">
+            <option value="date_asc" {% if sort == 'date_asc' %}selected{% endif %}>Дата (сначала ближайшие)</option>
+            <option value="date_desc" {% if sort == 'date_desc' %}selected{% endif %}>Дата (сначала дальние)</option>
+            <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>Цена (сначала дешёвые)</option>
+            <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>Цена (сначала дорогие)</option>
+            <option value="popular" {% if sort == 'popular' %}selected{% endif %}>Популярные</option>
+        </select>
+    </div>
+    
+    <!-- Кнопка поиска -->
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">Найти</button>
+    </div>
+</form>
 
+<!-- Список мероприятий -->
 <div class="row">
     {% for event in events %}
     <div class="col-md-4 mb-3">
@@ -40,8 +78,43 @@
     </div>
     {% empty %}
     <div class="col">
-        <p>Нет предстоящих мероприятий</p>
+        <p>Нет мероприятий по вашему запросу</p>
     </div>
     {% endfor %}
 </div>
+
+<!-- Пагинация -->
+{% if events.has_other_pages %}
+<nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if events.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1{% if q %}&q={{ q }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}">&laquo; Первая</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ events.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}">Предыдущая</a>
+            </li>
+        {% endif %}
+
+        {% for num in events.paginator.page_range %}
+            {% if events.number == num %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+            {% elif num > events.number|add:'-3' and num < events.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% if q %}&q={{ q }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}">{{ num }}</a>
+                </li>
+            {% endif %}
+        {% endfor %}
+
+        {% if events.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ events.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}">Следующая</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ events.paginator.num_pages }}{% if q %}&q={{ q }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}">Последняя &raquo;</a>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
 {% endblock %}

@@ -15,4 +15,13 @@ urlpatterns = [
     path('register/<int:pk>/', views.register_for_event, name='register_for_event'),
     path('cancel/<int:pk>/', views.cancel_registration, name='cancel_registration'),
     path('recommendations/', views.recommendations, name='recommendations'),
+    path('comment/<int:event_id>/', views.add_comment, name='add_comment'),
+    path('comment/delete/<int:comment_id>/', views.delete_comment, name='delete_comment'),
+    path('like/<int:event_id>/', views.toggle_like, name='toggle_like'),
+    path('review/<int:event_id>/', views.add_review, name='add_review'),
+    path('review/delete/<int:review_id>/', views.delete_review, name='delete_review'),
+    path('favorite/<int:event_id>/', views.toggle_favorite, name='toggle_favorite'),
+    path('favorites/', views.favorites_list, name='favorites_list'),
+    path('notifications/', views.notifications_list, name='notifications_list'),
+    path('statistics/<int:pk>/', views.event_statistics, name='event_statistics'),
 ]

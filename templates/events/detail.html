@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}{{ event.title }}{% endblock %}
 
@@ -19,7 +20,7 @@
         <p><strong>Описание:</strong> {{ event.description|linebreaks }}</p>
     </div>
     <div class="col-md-4">
-        <div class="card">
+        <div class="card mb-3">
             <div class="card-header bg-primary text-white">
                 <h5 class="mb-0">Информация</h5>
             </div>
@@ -32,6 +33,22 @@
                 <p><strong>Цена:</strong> {% if event.is_free %}Бесплатно{% else %}{{ event.price }} руб.{% endif %}</p>
                 <p><strong>Участников:</strong> {{ event.get_participants_count }}{% if event.max_participants %} / {{ event.max_participants }}{% endif %}</p>
                 <p><strong>Организатор:</strong> {{ event.creator.username }}</p>
+                
+                <!-- ЛАЙК -->
+                <div class="text-center mb-3">
+                    <button id="like-button" class="btn btn-outline-danger" data-event-id="{{ event.id }}">
+                        <i class="bi bi-heart{% if user_liked %}-fill{% endif %}"></i>
+                        <span id="likes-count">{{ event.likes.count }}</span> ❤️
+                    </button>
+                </div>
+                
+                <!-- ИЗБРАННОЕ -->
+                <div class="text-center mb-3">
+                    <button id="favorite-button" class="btn btn-outline-warning" data-event-id="{{ event.id }}">
+                        <i class="bi bi-star{% if user_favorited %}-fill{% endif %}"></i>
+                        <span id="favorites-count">{{ event.favorites.count }}</span> ⭐
+                    </button>
+                </div>
                 
                 {% if user.is_authenticated %}
                     {% if event.creator == user %}
@@ -59,4 +76,154 @@
         </div>
     </div>
 </div>
+
+<!-- КОММЕНТАРИИ -->
+<div class="row mt-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">💬 Комментарии ({{ event.comments.count }})</h5>
+            </div>
+            <div class="card-body">
+                {% if user.is_authenticated %}
+                    <form method="post" action="{% url 'add_comment' event.id %}" class="mb-4">
+                        {% csrf_token %}
+                        <textarea name="text" class="form-control mb-2" rows="3" placeholder="Напишите комментарий..."></textarea>
+                        <button type="submit" class="btn btn-primary">Отправить</button>
+                    </form>
+                {% else %}
+                    <p class="text-muted"><a href="{% url 'login' %}">Войдите</a>, чтобы оставить комментарий</p>
+                {% endif %}
+                
+                {% for comment in event.comments.all %}
+                    <div class="border-bottom mb-3 pb-3" id="comment-{{ comment.id }}">
+                        <div class="d-flex justify-content-between">
+                            <strong>{{ comment.user.username }}</strong>
+                            <small class="text-muted">{{ comment.created_at|date:"d.m.Y H:i" }}</small>
+                        </div>
+                        <p class="mb-1">{{ comment.text|linebreaks }}</p>
+                        {% if user.is_authenticated and user == comment.user or user.is_superuser %}
+                            <a href="{% url 'delete_comment' comment.id %}" class="text-danger small" onclick="return confirm('Удалить комментарий?')">Удалить</a>
+                        {% endif %}
+                    </div>
+                {% empty %}
+                    <p class="text-muted">Пока нет комментариев. Будьте первым!</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ОТЗЫВЫ -->
+<div class="row mt-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0">⭐ Отзывы ({{ event.reviews.count }})</h5>
+            </div>
+            <div class="card-body">
+                {% if user.is_authenticated %}
+                    {% if user_registered_attended %}
+                        <form method="post" action="{% url 'add_review' event.id %}" class="mb-4 border p-3 rounded">
+                            <h6>Оставить отзыв</h6>
+                            {% csrf_token %}
+                            <div class="mb-2">
+                                <label class="form-label">Оценка:</label>
+                                <select name="rating" class="form-select w-auto d-inline-block ms-2">
+                                    <option value="5">5 ★</option>
+                                    <option value="4">4 ★</option>
+                                    <option value="3">3 ★</option>
+                                    <option value="2">2 ★</option>
+                                    <option value="1">1 ★</option>
+                                </select>
+                            </div>
+                            <textarea name="text" class="form-control mb-2" rows="2" placeholder="Ваш отзыв..."></textarea>
+                            <button type="submit" class="btn btn-warning">Отправить отзыв</button>
+                        </form>
+                    {% elif user_registered %}
+                        <p class="text-muted">Вы можете оставить отзыв после посещения мероприятия</p>
+                    {% endif %}
+                {% else %}
+                    <p class="text-muted"><a href="{% url 'login' %}">Войдите</a>, чтобы оставить отзыв</p>
+                {% endif %}
+                
+                {% for review in event.reviews.all %}
+                    <div class="border-bottom mb-3 pb-3">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <strong>{{ review.user.username }}</strong>
+                                <span class="text-warning ms-2">
+                                    {% for i in "12345"|make_list %}
+                                        {% if forloop.counter <= review.rating %}★{% else %}☆{% endif %}
+                                    {% endfor %}
+                                </span>
+                            </div>
+                            <small class="text-muted">{{ review.created_at|date:"d.m.Y H:i" }}</small>
+                        </div>
+                        <p class="mb-1">{{ review.text|default:"<em>Без комментария</em>" }}</p>
+                        {% if user.is_authenticated and user == review.user or user.is_superuser %}
+                            <a href="{% url 'delete_review' review.id %}" class="text-danger small" onclick="return confirm('Удалить отзыв?')">Удалить</a>
+                        {% endif %}
+                    </div>
+                {% empty %}
+                    <p class="text-muted">Пока нет отзывов. Будьте первым!</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // AJAX для лайков
+    document.getElementById('like-button')?.addEventListener('click', function() {
+        const eventId = this.dataset.eventId;
+        const likesSpan = document.getElementById('likes-count');
+        const icon = this.querySelector('i');
+        
+        fetch(`/events/like/${eventId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            likesSpan.textContent = data.likes_count;
+            if (data.liked) {
+                icon.classList.remove('bi-heart');
+                icon.classList.add('bi-heart-fill');
+            } else {
+                icon.classList.remove('bi-heart-fill');
+                icon.classList.add('bi-heart');
+            }
+        });
+    });
+    
+    // AJAX для избранного
+    document.getElementById('favorite-button')?.addEventListener('click', function() {
+        const eventId = this.dataset.eventId;
+        const favoritesSpan = document.getElementById('favorites-count');
+        const icon = this.querySelector('i');
+        
+        fetch(`/events/favorite/${eventId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            favoritesSpan.textContent = data.favorites_count;
+            if (data.favorited) {
+                icon.classList.remove('bi-star');
+                icon.classList.add('bi-star-fill');
+            } else {
+                icon.classList.remove('bi-star-fill');
+                icon.classList.add('bi-star');
+            }
+        });
+    });
+</script>
 {% endblock %}
