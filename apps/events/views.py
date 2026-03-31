@@ -8,22 +8,18 @@ from django.db.models import Q, Count
 from django.db import models
 import calendar
 from .models import Event, Category, Registration, Comment, Like, Review, Favorite, Notification
-from .forms import EventForm
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 from .forms import EventForm, CommentForm, ReviewForm
+from django.http import JsonResponse
 
 
 def event_list(request):
     """Афиша мероприятий с поиском, фильтрацией, сортировкой и пагинацией"""
     
-    # Базовый запрос: только опубликованные и предстоящие
     events = Event.objects.filter(
         status='published',
         start_datetime__gte=timezone.now()
     )
     
-    # ========== ПОИСК ==========
     q = request.GET.get('q', '')
     if q:
         events = events.filter(
@@ -32,7 +28,6 @@ def event_list(request):
             Q(location__icontains=q)
         )
     
-    # ========== ФИЛЬТР ПО ДАТЕ ==========
     date_filter = request.GET.get('date', '')
     today = timezone.now().date()
     
@@ -47,12 +42,10 @@ def event_list(request):
         next_month = today + timedelta(days=30)
         events = events.filter(start_datetime__date__range=[today, next_month])
     
-    # ========== ФИЛЬТР ПО КАТЕГОРИИ ==========
     category_id = request.GET.get('category')
     if category_id:
         events = events.filter(category_id=category_id)
     
-    # ========== СОРТИРОВКА ==========
     sort = request.GET.get('sort', 'date_asc')
     
     if sort == 'date_asc':
@@ -66,12 +59,10 @@ def event_list(request):
     elif sort == 'popular':
         events = events.annotate(participants_count=Count('registrations')).order_by('-participants_count')
     
-    # ========== ПАГИНАЦИЯ ==========
-    paginator = Paginator(events, 9)  # 9 мероприятий на страницу
+    paginator = Paginator(events, 9)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
-    # ========== КОНТЕКСТ ==========
     categories = Category.objects.all()
     
     context = {
@@ -271,19 +262,21 @@ def register_for_event(request, pk):
     )
     return redirect('event_detail', pk=pk)
 
+
 @login_required
 def cancel_registration(request, pk):
     registration = get_object_or_404(Registration, pk=pk, user=request.user)
     event_title = registration.event.title
+    event_id = registration.event.id
     registration.delete()
     messages.success(request, f'Запись на "{event_title}" отменена')
-    # Уведомление пользователю об отмене записи
+    
     create_notification(
         user=request.user,
         notification_type='registration_cancelled',
         title='Запись отменена',
         message=f'Ваша запись на мероприятие "{event_title}" отменена',
-        link=f'/events/{event.id}/'
+        link=f'/events/{event_id}/'
     )
     return redirect('my_registrations')
 
@@ -299,9 +292,9 @@ def recommendations(request):
     
     return render(request, 'events/recommendations.html', {'recommendations': recommended})
 
+
 @login_required
 def add_comment(request, event_id):
-    """Добавление комментария к мероприятию"""
     event = get_object_or_404(Event, pk=event_id)
     
     if request.method == 'POST':
@@ -312,23 +305,22 @@ def add_comment(request, event_id):
             comment.user = request.user
             comment.save()
             messages.success(request, 'Комментарий добавлен!')
-
+            
             # Уведомление организатору о новом комментарии
-    if comment.event.creator != request.user:
-        create_notification(
-            user=comment.event.creator,
-            notification_type='new_comment',
-            title='Новый комментарий',
-            message=f'{request.user.username} оставил комментарий на вашем мероприятии "{comment.event.title}"',
-            link=f'/events/{comment.event.id}/'
-        )
+            if comment.event.creator != request.user:
+                create_notification(
+                    user=comment.event.creator,
+                    notification_type='new_comment',
+                    title='Новый комментарий',
+                    message=f'{request.user.username} оставил комментарий на вашем мероприятии "{comment.event.title}"',
+                    link=f'/events/{comment.event.id}/'
+                )
     
     return redirect('event_detail', pk=event_id)
 
 
 @login_required
 def delete_comment(request, comment_id):
-    """Удаление комментария (только автор или администратор)"""
     comment = get_object_or_404(Comment, pk=comment_id)
     
     if request.user == comment.user or request.user.is_superuser:
@@ -343,30 +335,25 @@ def delete_comment(request, comment_id):
 
 @login_required
 def toggle_like(request, event_id):
-    """Поставить/убрать лайк (AJAX)"""
     event = get_object_or_404(Event, pk=event_id)
     like, created = Like.objects.get_or_create(event=event, user=request.user)
     
     if not created:
-        # Если лайк уже был — удаляем
         like.delete()
         liked = False
     else:
         liked = True
     
-    likes_count = event.likes.count()
-    
     return JsonResponse({
         'liked': liked,
-        'likes_count': likes_count
+        'likes_count': event.likes.count()
     })
+
 
 @login_required
 def add_review(request, event_id):
-    """Добавление отзыва о мероприятии"""
     event = get_object_or_404(Event, pk=event_id)
     
-    # Проверяем, что пользователь был на мероприятии (статус attended)
     registration = Registration.objects.filter(
         event=event, 
         user=request.user, 
@@ -385,25 +372,24 @@ def add_review(request, event_id):
             review.user = request.user
             review.save()
             messages.success(request, 'Спасибо за отзыв!')
+            
+            # Уведомление организатору о новом отзыве
+            if review.event.creator != request.user:
+                create_notification(
+                    user=review.event.creator,
+                    notification_type='new_review',
+                    title='Новый отзыв',
+                    message=f'{request.user.username} оставил отзыв на вашем мероприятии "{review.event.title}"',
+                    link=f'/events/{review.event.id}/'
+                )
         else:
             messages.error(request, 'Ошибка при сохранении отзыва')
     
-    # Уведомление организатору о новом отзыве
-    if review.event.creator != request.user:
-        create_notification(
-            user=review.event.creator,
-            notification_type='new_review',
-            title='Новый отзыв',
-            message=f'{request.user.username} оставил отзыв на вашем мероприятии "{review.event.title}"',
-            link=f'/events/{review.event.id}/'
-        )
-
     return redirect('event_detail', pk=event_id)
 
 
 @login_required
 def delete_review(request, review_id):
-    """Удаление отзыва"""
     review = get_object_or_404(Review, pk=review_id)
     
     if request.user == review.user or request.user.is_superuser:
@@ -418,7 +404,6 @@ def delete_review(request, review_id):
 
 @login_required
 def toggle_favorite(request, event_id):
-    """Добавить/удалить из избранного (AJAX)"""
     event = get_object_or_404(Event, pk=event_id)
     favorite, created = Favorite.objects.get_or_create(event=event, user=request.user)
     
@@ -428,21 +413,18 @@ def toggle_favorite(request, event_id):
     else:
         favorited = True
     
-    favorites_count = event.favorites.count()
-    
     return JsonResponse({
         'favorited': favorited,
-        'favorites_count': favorites_count
+        'favorites_count': event.favorites.count()
     })
 
 
 @login_required
 def favorites_list(request):
-    """Список избранных мероприятий"""
     favorites = Favorite.objects.filter(user=request.user).select_related('event')
     return render(request, 'events/favorites.html', {'favorites': favorites})
 
-@login_required
+
 def create_notification(user, notification_type, title, message, link=''):
     """Создание уведомления"""
     Notification.objects.create(
@@ -453,12 +435,10 @@ def create_notification(user, notification_type, title, message, link=''):
         link=link
     )
 
+
 @login_required
 def notifications_list(request):
-    """Список уведомлений пользователя"""
     notifications = Notification.objects.filter(user=request.user)
-    
-    # Отмечаем все как прочитанные при просмотре
     notifications.update(is_read=True)
     
     context = {
@@ -466,17 +446,15 @@ def notifications_list(request):
     }
     return render(request, 'events/notifications.html', context)
 
+
 @login_required
 def event_statistics(request, pk):
-    """Статистика мероприятия для организатора"""
     event = get_object_or_404(Event, pk=pk)
     
-    # Проверяем, что пользователь — организатор
     if event.creator != request.user:
         messages.error(request, 'У вас нет доступа к статистике этого мероприятия')
         return redirect('event_detail', pk=pk)
     
-    # Собираем статистику
     stats = {
         'views': event.views_count,
         'registrations': event.registrations.count(),
