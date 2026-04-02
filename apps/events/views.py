@@ -12,6 +12,7 @@ from .forms import EventForm, CommentForm, ReviewForm
 from django.http import JsonResponse
 from accounts.models import User
 from .recommender import generate_recommendations
+from django.contrib.admin.views.decorators import staff_member_required
 
 def event_list(request):
     """Афиша мероприятий с поиском, фильтрацией, сортировкой и пагинацией"""
@@ -196,11 +197,25 @@ def create_event(request):
         if form.is_valid():
             event = form.save(commit=False)
             event.creator = request.user
-            event.status = 'published'
+            event.status = 'pending'  # теперь не сразу публикуется, а на модерацию
             event.save()
             form.save_m2m()
-            messages.success(request, 'Мероприятие создано!')
-            return redirect('event_detail', pk=event.id)
+            
+            # Уведомление администратору
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            admins = User.objects.filter(is_superuser=True)
+            for admin in admins:
+                create_notification(
+                    user=admin,
+                    notification_type='event_pending',
+                    title='Новая заявка на мероприятие',
+                    message=f'{request.user.username} создал мероприятие "{event.title}" и ожидает модерации',
+                    link=f'/events/moderate/{event.id}/'
+                )
+            
+            messages.success(request, 'Мероприятие отправлено на модерацию. Ожидайте решения администратора.')
+            return redirect('my_events')
     else:
         form = EventForm()
     return render(request, 'events/create.html', {'form': form})
@@ -208,8 +223,25 @@ def create_event(request):
 
 @login_required
 def my_events(request):
-    events = Event.objects.filter(creator=request.user).order_by('-start_datetime')
-    return render(request, 'events/my_events.html', {'events': events})
+    """Мои мероприятия с фильтром по статусу"""
+    tab = request.GET.get('tab', 'draft')
+    
+    if tab == 'draft':
+        events = Event.objects.filter(creator=request.user, status='draft')
+    elif tab == 'pending':
+        events = Event.objects.filter(creator=request.user, status='pending')
+    elif tab == 'published':
+        events = Event.objects.filter(creator=request.user, status='published')
+    elif tab == 'rejected':
+        events = Event.objects.filter(creator=request.user, status='rejected')
+    else:
+        events = Event.objects.filter(creator=request.user)
+    
+    context = {
+        'events': events.order_by('-created_at'),
+        'active_tab': tab,
+    }
+    return render(request, 'events/my_events.html', context)
 
 
 @login_required
@@ -290,20 +322,37 @@ def cancel_registration(request, pk):
 @login_required
 def recommendations(request):
     """ML-рекомендации для специалиста"""
-    if request.user.role != 'user':
-        # Если админ, показываем обычные рекомендации
-        registered_events = Registration.objects.filter(user=request.user).values_list('event_id', flat=True)
-        recommended = Event.objects.filter(
+    
+    registered_events = Registration.objects.filter(user=request.user).values_list('event_id', flat=True)
+    
+    # Проверяем, заполнен ли профиль
+    has_profile_data = bool(request.user.skills or request.user.experience or request.user.specialization.exists())
+    
+    if not has_profile_data or request.user.role == 'admin':
+        # Обычные рекомендации (просто последние мероприятия)
+        recommended_events = Event.objects.filter(
             status='published',
             start_datetime__gt=timezone.now()
         ).exclude(id__in=registered_events).order_by('start_datetime')[:10]
+        
+        # Преобразуем в формат, совместимый с шаблоном
+        recommendations = []
+        for event in recommended_events:
+            recommendations.append({
+                'event': event,
+                'score': 0,
+                'percent_score': 0,
+                'reasons': []
+            })
+        is_ml = False
     else:
         # ML-рекомендации
-        recommended = generate_recommendations(request.user, limit=10)
+        recommendations = generate_recommendations(request.user, limit=10)
+        is_ml = True
     
     context = {
-        'recommendations': recommended,
-        'is_ml': True,
+        'recommendations': recommendations,
+        'is_ml': is_ml,
     }
     return render(request, 'events/recommendations.html', context)
 
@@ -597,3 +646,56 @@ def events_map(request):
         })
     
     return render(request, 'events/map.html', {'events_data': events_data})
+
+@staff_member_required
+def moderate_event(request, event_id):
+    """Страница модерации мероприятия"""
+    event = get_object_or_404(Event, pk=event_id)
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        comment = request.POST.get('comment', '')
+        
+        if action == 'approve':
+            event.status = 'published'
+            event.moderation_comment = ''
+            event.save()
+            
+            # Уведомление организатору
+            create_notification(
+                user=event.creator,
+                notification_type='event_approved',
+                title='Ваше мероприятие одобрено',
+                message=f'Ваше мероприятие "{event.title}" успешно опубликовано.',
+                link=f'/events/{event.id}/'
+            )
+            messages.success(request, 'Мероприятие одобрено и опубликовано')
+            
+        elif action == 'reject':
+            event.status = 'rejected'
+            event.moderation_comment = comment
+            event.save()
+            
+            # Уведомление организатору
+            create_notification(
+                user=event.creator,
+                notification_type='event_rejected',
+                title='Ваше мероприятие отклонено',
+                message=f'Ваше мероприятие "{event.title}" отклонено.\n\nПричина: {comment}' if comment else f'Ваше мероприятие "{event.title}" отклонено.',
+                link=f'/events/{event.id}/'
+            )
+            messages.success(request, 'Мероприятие отклонено')
+        
+        return redirect('pending_events')
+    
+    context = {
+        'event': event,
+    }
+    return render(request, 'events/moderate.html', context)
+
+
+@staff_member_required
+def pending_events(request):
+    """Список заявок на модерацию"""
+    events = Event.objects.filter(status='pending').order_by('-created_at')
+    return render(request, 'events/pending_events.html', {'events': events})

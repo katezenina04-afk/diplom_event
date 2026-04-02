@@ -3,38 +3,77 @@
 {% block title %}Мои мероприятия{% endblock %}
 
 {% block content %}
-<h1>Мои мероприятия</h1>
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
+            <li class="breadcrumb-item active">Мои мероприятия</li>
+        </ol>
+    </nav>
 
-<div class="row">
-    {% for event in events %}
-    <div class="col-md-4 mb-3">
-        <div class="card h-100">
-            {% if event.image %}
-                <img src="{{ event.image.url }}" class="card-img-top" alt="{{ event.title }}" style="height: 150px; object-fit: cover;">
-            {% else %}
-                <div class="bg-light text-center py-3">Нет изображения</div>
-            {% endif %}
-            <div class="card-body">
-                <h5>{{ event.title }}</h5>
-                <p class="text-muted">{{ event.start_datetime|date:"d.m.Y H:i" }}</p>
-                {% if event.category %}
-                    <span class="badge bg-info">{{ event.category.name }}</span>
+    <h1>Мои мероприятия</h1>
+
+    <ul class="nav nav-tabs mb-4">
+        <li class="nav-item">
+            <a class="nav-link {% if active_tab == 'draft' %}active{% endif %}" href="?tab=draft">Черновики</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if active_tab == 'pending' %}active{% endif %}" href="?tab=pending">На модерации</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if active_tab == 'published' %}active{% endif %}" href="?tab=published">Опубликованные</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if active_tab == 'rejected' %}active{% endif %}" href="?tab=rejected">Отклонённые</a>
+        </li>
+    </ul>
+
+    <div class="row">
+        {% for event in events %}
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                {% if event.image %}
+                    <img src="{{ event.image.url }}" class="card-img-top" alt="{{ event.title }}" style="height: 150px; object-fit: cover;">
                 {% endif %}
-                <p class="mt-2">Участников: {{ event.get_participants_count }}</p>
-                <div class="btn-group w-100">
-                    <a href="{% url 'event_detail' event.id %}" class="btn btn-sm btn-primary">Подробнее</a>
-                    <a href="{% url 'edit_event' event.id %}" class="btn btn-sm btn-warning">Ред.</a>
-                    <a href="{% url 'delete_event' event.id %}" class="btn btn-sm btn-danger" onclick="return confirm('Удалить?')">Удалить</a>
-                    <a href="{% url 'event_statistics' event.id %}" class="btn btn-sm btn-info">Статистика</a>
+                <div class="card-body">
+                    <h5>{{ event.title }}</h5>
+                    <p class="text-muted">{{ event.start_datetime|date:"d.m.Y H:i" }}</p>
+                    <p><strong>Статус:</strong> 
+                        {% if event.status == 'draft' %}
+                            <span class="badge bg-secondary">Черновик</span>
+                        {% elif event.status == 'pending' %}
+                            <span class="badge bg-warning">На модерации</span>
+                        {% elif event.status == 'published' %}
+                            <span class="badge bg-success">Опубликовано</span>
+                        {% elif event.status == 'rejected' %}
+                            <span class="badge bg-danger">Отклонено</span>
+                        {% endif %}
+                    </p>
+                    {% if event.moderation_comment %}
+                        <div class="alert alert-danger small">
+                            <strong>Причина отказа:</strong><br>
+                            {{ event.moderation_comment }}
+                        </div>
+                    {% endif %}
+                    <div class="btn-group w-100">
+                        <a href="{% url 'event_detail' event.id %}" class="btn btn-sm btn-primary">Подробнее</a>
+                        {% if event.status == 'draft' %}
+                            <a href="{% url 'edit_event' event.id %}" class="btn btn-sm btn-warning">Редактировать</a>
+                            <a href="{% url 'delete_event' event.id %}" class="btn btn-sm btn-danger" onclick="return confirm('Удалить?')">Удалить</a>
+                        {% endif %}
+                        {% if event.status == 'rejected' and event.moderation_comment %}
+                            <a href="{% url 'edit_event' event.id %}" class="btn btn-sm btn-warning">Исправить</a>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
+        {% empty %}
+        <div class="col">
+            <p class="text-muted">Нет мероприятий</p>
+            <a href="{% url 'create_event' %}" class="btn btn-primary">Создать мероприятие</a>
+        </div>
+        {% endfor %}
     </div>
-    {% empty %}
-    <div class="col">
-        <p>У вас нет созданных мероприятий</p>
-        <a href="{% url 'create_event' %}" class="btn btn-primary">Создать мероприятие</a>
-    </div>
-    {% endfor %}
 </div>
 {% endblock %}

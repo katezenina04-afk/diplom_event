@@ -28,4 +28,6 @@ urlpatterns = [
     path('invite-specialist/<int:event_id>/<int:specialist_id>/', views.invite_specialist, name='invite_specialist'),
     path('accept-invitation/<int:registration_id>/', views.accept_invitation, name='accept_invitation'),
     path('map/', views.events_map, name='events_map'),
+    path('moderate/<int:event_id>/', views.moderate_event, name='moderate_event'),
+    path('pending/', views.pending_events, name='pending_events'),
 ]

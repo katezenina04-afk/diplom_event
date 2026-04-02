@@ -2,9 +2,8 @@ import re
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-from django.db.models import Q
 from .models import Event, Category
-from accounts.models import User
+from django.utils import timezone
 
 
 def get_user_profile_text(user):
@@ -35,9 +34,9 @@ def get_event_text(event):
     if event.description:
         text_parts.append(event.description)
     
-    # Категории
-    categories = list(event.categories.values_list('name', flat=True))
-    text_parts.extend(categories)
+    # Категория (одна, а не ManyToMany)
+    if event.category:
+        text_parts.append(event.category.name)
     
     return " ".join(text_parts)
 
@@ -47,8 +46,7 @@ def generate_recommendations(user, limit=5):
     Генерирует ML-рекомендации для специалиста
     Использует TF-IDF + косинусную близость
     """
-    from django.utils import timezone
-    from .models import Event, Registration, Response
+    from .models import Event, Registration
     
     # Получаем текст профиля пользователя
     user_text = get_user_profile_text(user)
@@ -57,17 +55,10 @@ def generate_recommendations(user, limit=5):
     if not user_text.strip():
         return []
     
-    # Мероприятия, на которые пользователь уже записан или приглашён
+    # Мероприятия, на которые пользователь уже записан
     registered_events = Registration.objects.filter(
         user=user
     ).values_list('event_id', flat=True)
-    
-    # Мероприятия, на которые пользователь уже откликался (если есть)
-    responded_events = []
-    if hasattr(user, 'responses'):
-        responded_events = user.responses.filter(
-            status__in=['accepted', 'pending']
-        ).values_list('vacancy__event_id', flat=True)
     
     # Доступные мероприятия (опубликованные и предстоящие)
     available_events = Event.objects.filter(
@@ -75,8 +66,6 @@ def generate_recommendations(user, limit=5):
         start_datetime__gt=timezone.now()
     ).exclude(
         id__in=registered_events
-    ).exclude(
-        id__in=responded_events
     )
     
     if not available_events:
@@ -95,7 +84,7 @@ def generate_recommendations(user, limit=5):
         min_df=1,
         max_df=0.9,
         lowercase=True,
-        ngram_range=(1, 2)  # учитываем и биграммы
+        ngram_range=(1, 2)
     )
     
     # Обучаем векторизатор на текстах мероприятий
@@ -150,4 +139,4 @@ def explain_match(user_text, event_text, score):
     if not reasons:
         reasons.append(f"общая релевантность: {int(score * 100)}%")
     
-    return reasons[:3]  # максимум 3 причины
+    return reasons[:3]

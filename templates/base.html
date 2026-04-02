@@ -78,6 +78,12 @@
                                 </a></li>
                                 {% if user.is_superuser %}
                                     <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{% url 'pending_events' %}">
+                                        <i class="bi bi-envelope-paper"></i> Заявки на модерацию
+                                        {% if pending_count > 0 %}
+                                            <span class="badge bg-danger">{{ pending_count }}</span>
+                                        {% endif %}
+                                    </a></li>
                                     <li><a class="dropdown-item" href="/admin/">
                                         <i class="bi bi-gear"></i> Админка
                                     </a></li>

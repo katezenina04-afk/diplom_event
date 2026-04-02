@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}Модерация: {{ event.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'pending_events' %}">Заявки</a></li>
+            <li class="breadcrumb-item active">Модерация</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Мероприятие: {{ event.title }}</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Организатор:</strong> {{ event.creator.username }} ({{ event.creator.email }})</p>
+                    <p><strong>Дата создания:</strong> {{ event.created_at|date:"d.m.Y H:i" }}</p>
+                    <p><strong>Дата начала:</strong> {{ event.start_datetime|date:"d.m.Y H:i" }}</p>
+                    <p><strong>Дата окончания:</strong> {{ event.end_datetime|date:"d.m.Y H:i"|default:"Не указана" }}</p>
+                    <p><strong>Место:</strong> {{ event.location }}</p>
+                    <p><strong>Категория:</strong> {{ event.category.name|default:"Не указана" }}</p>
+                    <p><strong>Цена:</strong> {% if event.is_free %}Бесплатно{% else %}{{ event.price }} руб.{% endif %}</p>
+                    <p><strong>Описание:</strong></p>
+                    <div class="border p-3 bg-light mb-3">
+                        {{ event.description|linebreaks|default:"Нет описания" }}
+                    </div>
+                    
+                    {% if event.image %}
+                        <p><strong>Афиша:</strong></p>
+                        <img src="{{ event.image.url }}" class="img-fluid mb-3" style="max-height: 300px;">
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Решение</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Ваше решение:</label>
+                            <div class="d-grid gap-2">
+                                <button type="submit" name="action" value="approve" class="btn btn-success">
+                                    <i class="bi bi-check-lg"></i> Одобрить
+                                </button>
+                                <button type="button" class="btn btn-danger" data-bs-toggle="collapse" data-bs-target="#rejectForm">
+                                    <i class="bi bi-x-lg"></i> Отклонить
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="collapse mt-3" id="rejectForm">
+                            <div class="card card-body">
+                                <div class="mb-3">
+                                    <label for="comment" class="form-label">Причина отклонения:</label>
+                                    <textarea name="comment" id="comment" class="form-control" rows="3" placeholder="Укажите причину отклонения..."></textarea>
+                                </div>
+                                <button type="submit" name="action" value="reject" class="btn btn-danger">
+                                    Отклонить с комментарием
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

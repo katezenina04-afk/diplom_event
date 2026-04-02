@@ -21,6 +21,7 @@ class Event(models.Model):
         ('draft', 'Черновик'),
         ('pending', 'На модерации'),
         ('published', 'Опубликовано'),
+        ('rejected', 'Отклонено'),
         ('cancelled', 'Отменено'),
         ('completed', 'Завершено'),
     ]
@@ -55,7 +56,8 @@ class Event(models.Model):
     
     status = models.CharField('Статус', max_length=20, choices=STATUS_CHOICES, default='draft')
     views_count = models.PositiveIntegerField('Просмотры', default=0)
-    
+    moderation_comment = models.TextField('Комментарий модератора', blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -183,6 +185,9 @@ class Notification(models.Model):
         ('registration_cancelled', 'Запись отменена'),
         ('event_cancelled', 'Мероприятие отменено'),
         ('invitation', 'Приглашение на мероприятие'),
+        ('event_pending', 'Заявка на мероприятие'),
+        ('event_approved', 'Мероприятие одобрено'),
+        ('event_rejected', 'Мероприятие отклонено'),
     ]
     
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='notifications')
