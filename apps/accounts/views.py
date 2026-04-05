@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import UserRegistrationForm, ProfileForm
 from events.models import Category
+from .email_utils import send_registration_email
 
 def register_view(request):
     if request.method == 'POST':
@@ -66,3 +67,28 @@ def edit_profile(request):
         'categories': categories,
     }
     return render(request, 'accounts/edit_profile.html', context)
+
+def register_view(request):
+    if request.method == 'POST':
+        form = UserRegistrationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            
+            print(f"=== ОТЛАДКА: пользователь {user.username} создан, email: {user.email} ===")
+            
+            # Отправка приветственного письма
+            try:
+                send_registration_email(user)
+                print("=== ОТЛАДКА: send_registration_email вызван ===")
+            except Exception as e:
+                print(f"ОШИБКА при отправке письма: {e}")
+
+            # Отправка приветственного письма
+            # send_registration_email(user)
+            
+            messages.success(request, 'Регистрация прошла успешно!')
+            return redirect('home')
+    else:
+        form = UserRegistrationForm()
+    return render(request, 'accounts/register.html', {'form': form})

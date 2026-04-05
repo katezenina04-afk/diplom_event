@@ -13,6 +13,12 @@ from django.http import JsonResponse
 from accounts.models import User
 from .recommender import generate_recommendations
 from django.contrib.admin.views.decorators import staff_member_required
+from accounts.email_utils import (
+    send_event_registration_email,
+    send_moderation_result_email,
+    send_invitation_email,
+    send_reminder_email
+)
 
 def event_list(request):
     """Афиша мероприятий с поиском, фильтрацией, сортировкой и пагинацией"""
@@ -78,7 +84,6 @@ def event_list(request):
     }
     return render(request, 'events/list.html', context)
 
-
 def event_detail(request, pk):
     event = get_object_or_404(Event, pk=pk)
     is_registered = False
@@ -87,18 +92,22 @@ def event_detail(request, pk):
     user_favorited = False
     user_registered = False
     user_registered_attended = False
-    has_pending_invitation = False  # новая переменная
-    
     event.views_count += 1
     event.save(update_fields=['views_count'])
+    
+    # <<<<< ДОБАВЛЕНО: проверка, прошло ли мероприятие
+    is_past = False
+    if event.end_datetime:
+        is_past = event.end_datetime < timezone.now()
+    else:
+        is_past = event.start_datetime < timezone.now()
+    # >>>>> КОНЕЦ ДОБАВЛЕНИЯ
     
     if request.user.is_authenticated:
         registration = Registration.objects.filter(event=event, user=request.user).first()
         is_registered = registration is not None
         user_registered = registration is not None
-        if registration:
-            user_registered_attended = registration.status == 'attended'
-            has_pending_invitation = registration.status == 'pending' and registration.is_invited
+        user_registered_attended = registration is not None and registration.status == 'attended'
         user_liked = Like.objects.filter(event=event, user=request.user).exists()
         user_favorited = Favorite.objects.filter(event=event, user=request.user).exists()
     
@@ -110,7 +119,7 @@ def event_detail(request, pk):
         'user_favorited': user_favorited,
         'user_registered': user_registered,
         'user_registered_attended': user_registered_attended,
-        'has_pending_invitation': has_pending_invitation,  # новая переменная
+        'is_past': is_past,  # <<<<< ДОБАВЛЕНО
     }
     return render(request, 'events/detail.html', context)
 
@@ -138,7 +147,19 @@ def event_calendar(request, year=None, month=None):
         day = event.start_datetime.day
         if day not in events_by_day:
             events_by_day[day] = []
-        events_by_day[day].append(event)
+        
+        # <<<<< ИЗМЕНЕНО: добавляем информацию о том, прошло ли мероприятие
+        is_past = False
+        if event.end_datetime:
+            is_past = event.end_datetime < timezone.now()
+        else:
+            is_past = event.start_datetime < timezone.now()
+        # >>>>> КОНЕЦ ИЗМЕНЕНИЙ
+        
+        events_by_day[day].append({
+            'event': event,
+            'is_past': is_past,  # <<<<< ДОБАВЛЕНО
+        })
     
     calendar_data = []
     week = []
@@ -291,6 +312,9 @@ def register_for_event(request, pk):
     reg = Registration.objects.create(event=event, user=request.user, status='confirmed')
     messages.success(request, f'Вы успешно записаны! Ваш код для входа: {reg.entry_code}')
     
+    # Отправка email-уведомления
+    send_event_registration_email(request.user, event)
+
     create_notification(
         user=request.user,
         notification_type='registration_confirmed',
@@ -613,6 +637,8 @@ def invite_specialist(request, event_id, specialist_id):
 )
     
     messages.success(request, f'Приглашение отправлено пользователю {specialist.username}')
+    # Отправка email-уведомления специалисту
+    send_invitation_email(specialist, event, message)
     return redirect('edit_event', pk=event.id)
 
 @login_required
@@ -661,7 +687,7 @@ def moderate_event(request, event_id):
             event.moderation_comment = ''
             event.save()
             
-            # Уведомление организатору
+            # Уведомление организатору в системе
             create_notification(
                 user=event.creator,
                 notification_type='event_approved',
@@ -669,6 +695,10 @@ def moderate_event(request, event_id):
                 message=f'Ваше мероприятие "{event.title}" успешно опубликовано.',
                 link=f'/events/{event.id}/'
             )
+            
+            # Отправка email-уведомления организатору
+            send_moderation_result_email(event.creator, event, 'approved')
+            
             messages.success(request, 'Мероприятие одобрено и опубликовано')
             
         elif action == 'reject':
@@ -676,7 +706,7 @@ def moderate_event(request, event_id):
             event.moderation_comment = comment
             event.save()
             
-            # Уведомление организатору
+            # Уведомление организатору в системе
             create_notification(
                 user=event.creator,
                 notification_type='event_rejected',
@@ -684,6 +714,10 @@ def moderate_event(request, event_id):
                 message=f'Ваше мероприятие "{event.title}" отклонено.\n\nПричина: {comment}' if comment else f'Ваше мероприятие "{event.title}" отклонено.',
                 link=f'/events/{event.id}/'
             )
+            
+            # Отправка email-уведомления организатору
+            send_moderation_result_email(event.creator, event, 'rejected', comment)
+            
             messages.success(request, 'Мероприятие отклонено')
         
         return redirect('pending_events')

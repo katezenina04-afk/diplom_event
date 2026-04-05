@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+<body style="font-family: Arial, sans-serif;">
+    <h2>Здравствуйте, {{ user.username }}!</h2>
+    <p>Вы успешно записались на мероприятие <strong>{{ event.title }}</strong>.</p>
+    
+    <div style="background-color: #f0f0f0; padding: 15px; margin: 15px 0;">
+        <p><strong>Детали мероприятия:</strong></p>
+        <p>📅 Дата: {{ event.start_datetime|date:"d.m.Y H:i" }}</p>
+        <p>📍 Место: {{ event.location }}</p>
+        {% if entry_code %}
+            <p style="font-size: 24px; font-weight: bold;">🎫 Ваш код для входа: {{ entry_code }}</p>
+        {% endif %}
+    </div>
+    
+    <p>Сохраните этот код — он понадобится вам для входа на мероприятие.</p>
+    
+    <p>
+        <a href="http://127.0.0.1:8000/events/{{ event.id }}/" style="background-color: #007bff; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px;">
+            Подробнее о мероприятии
+        </a>
+    </p>
+    
+    <p>С уважением,<br>Команда Event Planner</p>
+</body>
+</html>

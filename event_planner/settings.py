@@ -66,7 +66,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'accounts.context_processors.unread_notifications',  # добавляем
+                'accounts.context_processors.unread_notifications',
+                'accounts.context_processors.pending_events_count',
             ],
         },
     },
@@ -125,3 +126,29 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'accounts.User'
 LOGIN_URL = '/accounts/login/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
+
+# Реальная отправка через Mail.ru
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.mail.ru'
+EMAIL_PORT = 465  # или 587 (для TLS)
+EMAIL_USE_SSL = True  # для порта 465
+# EMAIL_USE_TLS = True  # для порта 587 (раскомментировать, если используете 587)
+EMAIL_HOST_USER = 'ekaterinazenina04@mail.ru'  # ваш полный email на mail.ru
+EMAIL_HOST_PASSWORD = 'qlhrhWtupcv615YqIhH9'  # ваш пароль от почты
+DEFAULT_FROM_EMAIL = f'Event Planner <{EMAIL_HOST_USER}>'
+
+# Celery
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_BEAT_SCHEDULE = {
+    'send-event-reminders': {
+        'task': 'events.tasks.send_event_reminders',
+        'schedule': 3600.0,  # каждый час
+    },
+        'update-event-status': {
+        'task': 'events.tasks.update_expired_events_status',
+        'schedule': 3600.0,  # каждый час
+    },
+}

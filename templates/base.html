@@ -24,7 +24,12 @@
             margin-top: auto;
         }
         .dropdown-menu {
-            min-width: 200px;
+            min-width: 220px;
+        }
+        .dropdown-header {
+            font-size: 0.75rem;
+            color: #6c757d;
+            padding: 0.5rem 1rem;
         }
     </style>
 </head>
@@ -60,37 +65,52 @@
                                 <i class="bi bi-person-circle"></i> {{ user.username }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                <!-- Профиль -->
                                 <li><a class="dropdown-item" href="{% url 'profile' %}">
                                     <i class="bi bi-person"></i> Профиль
                                 </a></li>
+                                
                                 <li><hr class="dropdown-divider"></li>
+                                
+                                <!-- Раздел: Управление мероприятиями -->
+                                <li><h6 class="dropdown-header">📋 Управление мероприятиями</h6></li>
                                 <li><a class="dropdown-item" href="{% url 'my_events' %}">
                                     <i class="bi bi-calendar-plus"></i> Мои мероприятия
                                 </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <!-- Раздел: Участие -->
+                                <li><h6 class="dropdown-header">🎫 Участие</h6></li>
                                 <li><a class="dropdown-item" href="{% url 'my_registrations' %}">
                                     <i class="bi bi-ticket-perforated"></i> Мои записи
                                 </a></li>
                                 <li><a class="dropdown-item" href="{% url 'favorites_list' %}">
                                     <i class="bi bi-star"></i> Избранное
                                 </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <!-- Раздел: Аналитика -->
+                                <li><h6 class="dropdown-header">🤖 Аналитика</h6></li>
                                 <li><a class="dropdown-item" href="{% url 'recommendations' %}">
                                     <i class="bi bi-cpu"></i> Рекомендации
                                 </a></li>
+                                
                                 {% if user.is_superuser %}
+                                    <!-- Раздел: Администрирование -->
                                     <li><hr class="dropdown-divider"></li>
+                                    <li><h6 class="dropdown-header text-warning">⚙️ Администрирование</h6></li>
                                     <li><a class="dropdown-item" href="{% url 'pending_events' %}">
                                         <i class="bi bi-envelope-paper"></i> Заявки на модерацию
                                         {% if pending_count > 0 %}
                                             <span class="badge bg-danger">{{ pending_count }}</span>
                                         {% endif %}
                                     </a></li>
-                                    <li><a class="dropdown-item" href="/admin/">
-                                        <i class="bi bi-gear"></i> Админка
-                                    </a></li>
                                     <li><a class="dropdown-item" href="{% url 'reports_dashboard' %}">
                                         <i class="bi bi-graph-up"></i> Отчёты
                                     </a></li>
+                                    <li><a class="dropdown-item" href="/admin/">
+                                        <i class="bi bi-gear"></i> Админка
+                                    </a></li>
                                 {% endif %}
+                                
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <form method="post" action="{% url 'logout' %}" style="display: inline;">

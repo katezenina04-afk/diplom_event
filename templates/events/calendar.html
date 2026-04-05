@@ -3,6 +3,21 @@
 {% block title %}Календарь{% endblock %}
 
 {% block content %}
+<style>
+    /* <<<<< ДОБАВЛЕНЫ СТИЛИ для подсветки прошедших мероприятий */
+    .event-past {
+        background-color: #dc3545 !important;  /* красный */
+        opacity: 0.8;
+    }
+    .event-past:hover {
+        opacity: 1;
+    }
+    .event-upcoming {
+        background-color: #0dcaf0 !important;  /* голубой */
+    }
+    /* >>>>> КОНЕЦ СТИЛЕЙ */
+</style>
+
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h1>Календарь мероприятий</h1>
     <div>
@@ -23,9 +38,14 @@
                 {% if day_data.day %}
                     <strong>{{ day_data.day }}</strong>
                     <div class="mt-2">
-                        {% for event in day_data.events %}
-                            <a href="{% url 'event_detail' event.id %}" class="badge bg-info text-decoration-none d-block mb-1">
-                                {{ event.title|truncatechars:15 }}
+                        {% for item in day_data.events %}  <!-- <<<<< ИЗМЕНЕНО: теперь item вместо event -->
+                            <a href="{% url 'event_detail' item.event.id %}" 
+                               class="badge {% if item.is_past %}event-past{% else %}event-upcoming{% endif %} text-decoration-none d-block mb-1"
+                               style="font-size: 0.85rem;">
+                                {{ item.event.title|truncatechars:15 }}
+                                {% if item.is_past %}
+                                    <span class="badge bg-dark ms-1">✓</span>  <!-- <<<<< ДОБАВЛЕНА ГАЛОЧКА -->
+                                {% endif %}
                             </a>
                         {% empty %}
                             <small class="text-muted">—</small>

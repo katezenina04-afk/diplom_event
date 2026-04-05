@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+<body style="font-family: Arial, sans-serif;">
+    <h2>Здравствуйте, {{ user.username }}!</h2>
+    <p>Напоминаем, что мероприятие <strong>{{ event.title }}</strong> состоится <strong>завтра</strong>!</p>
+    
+    <div style="background-color: #f0f0f0; padding: 15px; margin: 15px 0;">
+        <p><strong>Детали мероприятия:</strong></p>
+        <p>📅 Дата: {{ event.start_datetime|date:"d.m.Y H:i" }}</p>
+        <p>📍 Место: {{ event.location }}</p>
+    </div>
+    
+    <p>Не забудьте взять с собой документ, удостоверяющий личность.</p>
+    
+    <p>
+        <a href="http://127.0.0.1:8000/events/{{ event.id }}/" style="background-color: #007bff; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px;">
+            Подробнее о мероприятии
+        </a>
+    </p>
+    
+    <p>С уважением,<br>Команда Event Planner</p>
+</body>
+</html>
