@@ -30,4 +30,5 @@ urlpatterns = [
     path('map/', views.events_map, name='events_map'),
     path('moderate/<int:event_id>/', views.moderate_event, name='moderate_event'),
     path('pending/', views.pending_events, name='pending_events'),
+    #path('confirm-assignment/<int:assignment_id>/', views.confirm_assignment, name='confirm_assignment'),
 ]

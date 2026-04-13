@@ -602,21 +602,29 @@ def invite_specialist(request, event_id, specialist_id):
     event = get_object_or_404(Event, pk=event_id, creator=request.user)
     specialist = get_object_or_404(User, pk=specialist_id)
     
-    # Проверяем, что специалист ищет работу
-    if not specialist.looking_for_work:
-        messages.warning(request, f'{specialist.username} не ищет работу')
+    # ПРОВЕРКА: не записан ли уже специалист на это мероприятие
+    already_registered = Registration.objects.filter(
+        event=event, 
+        user=specialist,
+        status='confirmed'
+    ).exists()
+    
+    if already_registered:
+        messages.warning(request, f'{specialist.username} уже записан на это мероприятие')
         return redirect('search_specialists', event_id=event.id)
     
-    # Проверяем, не записан ли уже
-    existing = Registration.objects.filter(event=event, user=specialist).first()
-    if existing:
-        if existing.status == 'confirmed':
-            messages.warning(request, f'{specialist.username} уже записан на это мероприятие')
-        elif existing.status == 'pending':
-            messages.warning(request, f'{specialist.username} уже приглашён')
+    # Проверка, не приглашался ли уже
+    already_invited = Registration.objects.filter(
+        event=event,
+        user=specialist,
+        status='pending'
+    ).exists()
+    
+    if already_invited:
+        messages.warning(request, f'{specialist.username} уже приглашён на это мероприятие')
         return redirect('search_specialists', event_id=event.id)
     
-    # Создаём запись в статусе pending (ожидает подтверждения)
+    # Создаём приглашение как запись со статусом 'pending'
     registration = Registration.objects.create(
         event=event,
         user=specialist,
@@ -624,17 +632,18 @@ def invite_specialist(request, event_id, specialist_id):
         is_invited=True
     )
     
-    # Получаем сообщение
-    message = request.GET.get('message', '') or request.POST.get('message', '')
+    # Генерируем код для входа (потом, когда подтвердит)
+    registration.entry_code = f"{secrets.randbelow(1000000):06d}"
+    registration.save()
     
-    # Создаём уведомление
+    # Отправляем уведомление специалисту
     create_notification(
-    user=specialist,
-    notification_type='invitation',
-    title=f'Приглашение на мероприятие "{event.title}"',
-    message=f'{request.user.username} приглашает вас на мероприятие "{event.title}".\n\n{message}' if message else f'{request.user.username} приглашает вас на мероприятие "{event.title}".',
-    link=f'/events/accept-invitation/{registration.id}/'  # вот так
-)
+        user=specialist,
+        notification_type='invitation',
+        title=f'Приглашение на мероприятие "{event.title}"',
+        message=f'{request.user.username} приглашает вас на мероприятие "{event.title}".',
+        link=f'/events/accept-invitation/{registration.id}/'
+    )
     
     messages.success(request, f'Приглашение отправлено пользователю {specialist.username}')
     # Отправка email-уведомления специалисту
@@ -644,16 +653,13 @@ def invite_specialist(request, event_id, specialist_id):
 @login_required
 def accept_invitation(request, registration_id):
     """Принять приглашение на мероприятие"""
-    print(f"DEBUG: accept_invitation called with registration_id={registration_id}")
     registration = get_object_or_404(Registration, pk=registration_id, user=request.user, status='pending')
-    print(f"DEBUG: registration found: {registration}")
     
     # Меняем статус на confirmed
     registration.status = 'confirmed'
     registration.save()
     
     messages.success(request, f'Вы приняли приглашение на мероприятие "{registration.event.title}"! Ваш код для входа: {registration.entry_code}')
-    
     return redirect('event_detail', pk=registration.event.id)
 
 def events_map(request):
@@ -727,9 +733,9 @@ def moderate_event(request, event_id):
     }
     return render(request, 'events/moderate.html', context)
 
-
 @staff_member_required
 def pending_events(request):
     """Список заявок на модерацию"""
     events = Event.objects.filter(status='pending').order_by('-created_at')
     return render(request, 'events/pending_events.html', {'events': events})
+

@@ -1,4 +1,6 @@
 from django import forms
+from django.db import models
+from django.conf import settings
 from .models import Event
 from .models import Event, Category, Registration, Comment, Like, Review, Favorite
 
@@ -33,6 +35,31 @@ class EventForm(forms.ModelForm):
             'is_free': 'Бесплатное мероприятие',
             'max_participants': 'Максимум участников',
         }
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        start_datetime = cleaned_data.get('start_datetime')
+        end_datetime = cleaned_data.get('end_datetime')
+        location = cleaned_data.get('location')
+        
+        if start_datetime and end_datetime and location:
+            # Проверяем, есть ли другое мероприятие в этом же месте в это же время
+            conflicting_events = Event.objects.filter(
+                location=location,
+                status__in=['published', 'confirmed', 'in_progress'],
+                start_datetime__lt=end_datetime,
+                end_datetime__gt=start_datetime
+            )
+            if self.instance.pk:
+                conflicting_events = conflicting_events.exclude(pk=self.instance.pk)
+            
+            if conflicting_events.exists():
+                raise forms.ValidationError(
+                    f'Помещение "{location}" уже занято в это время. '
+                    f'Конфликт с мероприятием: {conflicting_events.first().title}'
+                )
+        
+        return cleaned_data        
 
 class CommentForm(forms.ModelForm):
     class Meta:
@@ -66,3 +93,34 @@ class InviteSpecialistForm(forms.Form):
         required=False,
         label='Сообщение'
     )
+
+class Assignment(models.Model):
+    """Назначение специалиста на мероприятие"""
+    ROLE_CHOICES = [
+        ('host', 'Ведущий'),
+        ('speaker', 'Докладчик'),
+        ('assistant', 'Ассистент'),
+        ('participant', 'Участник'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('pending', 'Ожидает'),
+        ('confirmed', 'Подтверждён'),
+        ('rejected', 'Отклонён'),
+    ]
+    
+    event = models.ForeignKey('Event', on_delete=models.CASCADE, related_name='assignments')
+    specialist = models.ForeignKey('accounts.User', on_delete=models.CASCADE, related_name='assignments')
+    role = models.CharField('Роль', max_length=20, choices=ROLE_CHOICES, default='participant')
+    status = models.CharField('Статус', max_length=20, choices=STATUS_CHOICES, default='pending')
+    message = models.TextField('Сообщение', blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = 'Назначение'
+        verbose_name_plural = 'Назначения'
+        unique_together = ['event', 'specialist']
+    
+    def __str__(self):
+        return f"{self.specialist.username} → {self.event.title} ({self.get_role_display()})"

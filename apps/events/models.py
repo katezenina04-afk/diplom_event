@@ -93,7 +93,7 @@ class Registration(models.Model):
     
     entry_code = models.CharField('Код для входа', max_length=6, blank=True)
     
-    is_invited = models.BooleanField('Приглашён организатором', default=False)  # новое поле
+    is_invited = models.BooleanField('Приглашён организатором', default=False)  
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -4,18 +4,78 @@
 
 {% block content %}
 <style>
-    /* <<<<< ДОБАВЛЕНЫ СТИЛИ для подсветки прошедших мероприятий */
     .event-past {
-        background-color: #dc3545 !important;  /* красный */
+        background-color: #dc3545 !important;
         opacity: 0.8;
     }
     .event-past:hover {
         opacity: 1;
     }
     .event-upcoming {
-        background-color: #0dcaf0 !important;  /* голубой */
+        background-color: #0dcaf0 !important;
     }
-    /* >>>>> КОНЕЦ СТИЛЕЙ */
+    
+    .calendar-cell {
+        min-width: 100px;
+        vertical-align: top;
+        height: 120px;
+    }
+    
+    .events-container {
+        max-height: 100px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+    }
+    
+    .events-container::-webkit-scrollbar {
+        width: 4px;
+    }
+    
+    .event-badge {
+        font-size: 0.7rem;
+        white-space: normal;
+        word-wrap: break-word;
+        margin-bottom: 4px;
+        text-align: left;
+        display: block;
+    }
+    
+    .event-time {
+        font-size: 0.65rem;
+        background-color: rgba(0,0,0,0.2);
+        padding: 2px 4px;
+        border-radius: 3px;
+        margin-left: 4px;
+    }
+    
+    .more-indicator {
+        font-size: 0.7rem;
+        color: #0d6efd;
+        margin-top: 4px;
+        cursor: pointer;
+        text-decoration: underline;
+    }
+    
+    .more-indicator:hover {
+        color: #0a58ca;
+    }
+    
+    .hidden-events {
+        display: none;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid #dee2e6;
+    }
+    
+    .hidden-events.show {
+        display: block;
+    }
+    
+    .toggle-icon {
+        cursor: pointer;
+        font-size: 0.7rem;
+        margin-left: 4px;
+    }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -27,35 +87,106 @@
     </div>
 </div>
 
-<table class="table table-bordered text-center">
-    <thead class="table-dark">
-        <tr><th>Пн</th><th>Вт</th><th>Ср</th><th>Чт</th><th>Пт</th><th>Сб</th><th>Вс</th></thead>
-    <tbody>
-        {% for week in calendar_data %}
-        <tr style="height: 100px;">
-            {% for day_data in week %}
-            <td class="{% if day_data.is_today %}table-primary{% endif %} align-top">
-                {% if day_data.day %}
-                    <strong>{{ day_data.day }}</strong>
-                    <div class="mt-2">
-                        {% for item in day_data.events %}  <!-- <<<<< ИЗМЕНЕНО: теперь item вместо event -->
-                            <a href="{% url 'event_detail' item.event.id %}" 
-                               class="badge {% if item.is_past %}event-past{% else %}event-upcoming{% endif %} text-decoration-none d-block mb-1"
-                               style="font-size: 0.85rem;">
-                                {{ item.event.title|truncatechars:15 }}
-                                {% if item.is_past %}
-                                    <span class="badge bg-dark ms-1">✓</span>  <!-- <<<<< ДОБАВЛЕНА ГАЛОЧКА -->
+<div class="table-responsive">
+    <table class="table table-bordered text-center">
+        <thead class="table-dark">
+            <tr>
+                <th style="width: 14%;">Пн</th>
+                <th style="width: 14%;">Вт</th>
+                <th style="width: 14%;">Ср</th>
+                <th style="width: 14%;">Чт</th>
+                <th style="width: 14%;">Пт</th>
+                <th style="width: 14%;">Сб</th>
+                <th style="width: 14%;">Вс</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for week in calendar_data %}
+            <tr>
+                {% for day_data in week %}
+                <td class="calendar-cell {% if day_data.is_today %}table-primary{% endif %}">
+                    {% if day_data.day %}
+                        <strong>{{ day_data.day }}</strong>
+                        
+                        {% if day_data.events %}
+                            {% with event_count=day_data.events|length %}
+                                {% if event_count <= 2 %}
+                                    <!-- Если 2 или меньше мероприятий — показываем все -->
+                                    <div class="events-container mt-1">
+                                        {% for item in day_data.events %}
+                                            <a href="{% url 'event_detail' item.event.id %}" 
+                                               class="badge {% if item.is_past %}event-past{% else %}event-upcoming{% endif %} event-badge"
+                                               title="{{ item.event.title }} ({{ item.event.start_datetime|time:"H:i" }})">
+                                                <i class="bi bi-calendar3"></i>
+                                                {{ item.event.title|truncatechars:18 }}
+                                                <span class="event-time">{{ item.event.start_datetime|time:"H:i" }}</span>
+                                            </a>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <!-- Если 3 и больше — показываем первые 2 + кнопку "ещё N" -->
+                                    <div class="events-container mt-1">
+                                        {% for item in day_data.events|slice:":2" %}
+                                            <a href="{% url 'event_detail' item.event.id %}" 
+                                               class="badge {% if item.is_past %}event-past{% else %}event-upcoming{% endif %} event-badge"
+                                               title="{{ item.event.title }} ({{ item.event.start_datetime|time:"H:i" }})">
+                                                <i class="bi bi-calendar3"></i>
+                                                {{ item.event.title|truncatechars:18 }}
+                                                <span class="event-time">{{ item.event.start_datetime|time:"H:i" }}</span>
+                                            </a>
+                                        {% endfor %}
+                                        
+                                        <div class="more-indicator" onclick="toggleEvents(this)">
+                                            📋 + ещё {{ event_count|add:"-2" }} мероприятий 
+                                            <i class="bi bi-chevron-down toggle-icon"></i>
+                                        </div>
+                                        
+                                        <div class="hidden-events">
+                                            {% for item in day_data.events|slice:"2:" %}
+                                                <a href="{% url 'event_detail' item.event.id %}" 
+                                                   class="badge {% if item.is_past %}event-past{% else %}event-upcoming{% endif %} event-badge mt-1"
+                                                   title="{{ item.event.title }} ({{ item.event.start_datetime|time:"H:i" }})">
+                                                    <i class="bi bi-calendar3"></i>
+                                                    {{ item.event.title|truncatechars:18 }}
+                                                    <span class="event-time">{{ item.event.start_datetime|time:"H:i" }}</span>
+                                                </a>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
                                 {% endif %}
-                            </a>
-                        {% empty %}
-                            <small class="text-muted">—</small>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            </td>
+                            {% endwith %}
+                        {% else %}
+                            <div class="text-muted small mt-2">—</div>
+                        {% endif %}
+                    {% endif %}
+                </td>
+                {% endfor %}
+            </tr>
             {% endfor %}
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    function toggleEvents(element) {
+        const hiddenDiv = element.nextElementSibling;
+        const icon = element.querySelector('.toggle-icon');
+        
+        if (hiddenDiv.classList.contains('show')) {
+            hiddenDiv.classList.remove('show');
+            icon.classList.remove('bi-chevron-up');
+            icon.classList.add('bi-chevron-down');
+        } else {
+            hiddenDiv.classList.add('show');
+            icon.classList.remove('bi-chevron-down');
+            icon.classList.add('bi-chevron-up');
+        }
+    }
+</script>
+
+{% if not calendar_data %}
+    <div class="alert alert-info text-center mt-4">
+        <i class="bi bi-calendar-x"></i> Нет мероприятий на этот месяц
+    </div>
+{% endif %}
 {% endblock %}

@@ -16,40 +16,49 @@ def reports_dashboard(request):
 
 
 @staff_member_required
-def specialist_report(request):
-    """Отчёт по специалистам (организаторам)"""
-    # Специалисты — пользователи, которые создали хотя бы одно мероприятие
-    specialists = User.objects.filter(created_events__isnull=False).distinct()
+def organizer_report(request):
+    """Отчёт по организаторам"""
+    organizers = User.objects.filter(created_events__isnull=False).distinct()
+    
+    # Фильтрация
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+    organizer_id = request.GET.get('organizer')
     
     data = []
-    for user in specialists:
-        events_count = user.created_events.count()
-        total_participants = Registration.objects.filter(event__creator=user).count()
-        total_likes = Like.objects.filter(event__creator=user).count()
-        total_favorites = Favorite.objects.filter(event__creator=user).count()
-        total_comments = Comment.objects.filter(event__creator=user).count()
-        avg_rating = Review.objects.filter(event__creator=user).aggregate(avg=models.Avg('rating'))['avg'] or 0
+    for user in organizers:
+        events = user.created_events.all()
+        
+        # Применяем фильтры
+        if date_from:
+            events = events.filter(start_datetime__gte=date_from)
+        if date_to:
+            events = events.filter(start_datetime__lte=date_to)
+        
+        events_count = events.count()
+        total_participants = Registration.objects.filter(event__in=events).count()
+        total_likes = Like.objects.filter(event__in=events).count()
         
         data.append({
             'user': user,
             'events_count': events_count,
             'total_participants': total_participants,
             'total_likes': total_likes,
-            'total_favorites': total_favorites,
-            'total_comments': total_comments,
-            'avg_rating': round(avg_rating, 1),
         })
     
-    # Сортируем по количеству мероприятий
+    # Сортируем
     data.sort(key=lambda x: x['events_count'], reverse=True)
     
     context = {
         'data': data,
-        'total_specialists': len(data),
+        'total_organizers': len(data),
         'total_events': Event.objects.count(),
-        'total_participants': Registration.objects.count(),
+        'date_from': date_from,
+        'date_to': date_to,
+        'selected_organizer': organizer_id,
+        'organizers': organizers,
     }
-    return render(request, 'reports/specialist_report.html', context)
+    return render(request, 'reports/organizer_report.html', context)
 
 
 @staff_member_required
