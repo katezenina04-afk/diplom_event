@@ -4,25 +4,64 @@
 {% block title %}Карта мероприятий{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
-            <li class="breadcrumb-item active">Карта мероприятий</li>
-        </ol>
-    </nav>
+<section class="mb-4">
+    <div class="map-hero rounded-4 p-4 p-lg-5 text-white">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <span class="badge bg-light text-dark mb-3 px-3 py-2">Интерактивная карта</span>
+                <h1 class="display-6 fw-bold mb-3">Находите мероприятия на карте города</h1>
+                <p class="lead mb-0">
+                    На карте отображаются опубликованные мероприятия. Можно быстро перейти к карточке события и посмотреть, что проходит рядом.
+                </p>
+            </div>
+            <div class="col-lg-4 mt-4 mt-lg-0 text-lg-end">
+                <a href="{% url 'event_list' %}" class="btn btn-light btn-lg px-4">
+                    Перейти к афише
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
 
-    <h1>🗺️ Карта мероприятий</h1>
-    <p class="text-muted">На карте отмечены все предстоящие мероприятия</p>
+<section class="mb-4">
+    <div class="row g-4">
+        <div class="col-lg-9">
+            <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+                <div class="card-body p-0">
+                    <div id="map" style="width: 100%; height: 620px;"></div>
+                </div>
+            </div>
+        </div>
 
-    <div id="map" style="width: 100%; height: 500px; border-radius: 8px;"></div>
-</div>
+        <div class="col-lg-3">
+            <div class="card shadow-sm border-0 rounded-4 mb-4">
+                <div class="card-body p-4">
+                    <h3 class="h6 fw-bold mb-3">Как использовать карту</h3>
+                    <ul class="list-unstyled small text-muted mb-0">
+                        <li class="mb-2"><i class="bi bi-geo-alt me-2 text-danger"></i>найти мероприятия по местоположению</li>
+                        <li class="mb-2"><i class="bi bi-search me-2 text-primary"></i>сравнить события в разных районах</li>
+                        <li class="mb-2"><i class="bi bi-box-arrow-up-right me-2 text-success"></i>перейти к карточке мероприятия</li>
+                        <li><i class="bi bi-calendar-event me-2 text-warning"></i>посмотреть дату и место проведения</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body p-4">
+                    <h3 class="h6 fw-bold mb-3">О карте</h3>
+                    <p class="small text-muted mb-0">
+                        Карта помогает быстро оценить, где проходят события, и выбрать удобную площадку без перехода по нескольким страницам.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-    // Данные мероприятий из Django
     var eventsData = [
         {% for event in events_data %}
         {
@@ -34,22 +73,14 @@
         },
         {% endfor %}
     ];
-    
-    // Инициализация карты
+
     var map = L.map('map').setView([55.751574, 37.573856], 10);
-    
-    // Добавляем заголовок Referer для обхода блокировки
+
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         referrerPolicy: 'origin'
     }).addTo(map);
-    
-    // Альтернативный вариант — использовать другой источник карт (без блокировки)
-    // L.tileLayer('https://tile.openstreetmap.de/{z}/{x}/{y}.png', {
-    //     attribution: '&copy; OpenStreetMap contributors'
-    // }).addTo(map);
-    
-    // Обрабатываем мероприятия
+
     eventsData.forEach(function(event) {
         if (event.location) {
             fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(event.location)}&limit=1`)
@@ -58,14 +89,16 @@
                     if (data && data.length > 0) {
                         var lat = data[0].lat;
                         var lon = data[0].lon;
-                        
+
                         L.marker([lat, lon])
                             .addTo(map)
                             .bindPopup(`
-                                <strong>${event.title}</strong><br>
-                                📍 ${event.location}<br>
-                                📅 ${event.date}<br>
-                                <a href="${event.url}" class="btn btn-sm btn-primary mt-2">Подробнее</a>
+                                <div style="min-width: 220px;">
+                                    <strong>${event.title}</strong><br>
+                                    <span style="color:#6b7280;">📍 ${event.location}</span><br>
+                                    <span style="color:#6b7280;">📅 ${event.date}</span><br>
+                                    <a href="${event.url}" class="btn btn-sm btn-primary mt-2">Подробнее</a>
+                                </div>
                             `);
                     }
                 })
@@ -73,4 +106,10 @@
         }
     });
 </script>
+
+<style>
+    .map-hero {
+        background: linear-gradient(135deg, #dc2626, #2563eb);
+    }
+</style>
 {% endblock %}

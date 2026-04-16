@@ -3,86 +3,153 @@
 {% block title %}Редактировать профиль{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-8 offset-md-2">
-        <div class="card">
-            <div class="card-header bg-warning">
-                <h4 class="mb-0">Редактировать профиль</h4>
+<section class="mb-4">
+    <div class="edit-profile-hero rounded-4 p-4 p-lg-5 text-white">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <span class="badge bg-light text-dark mb-3 px-3 py-2">Настройки профиля</span>
+                <h1 class="display-6 fw-bold mb-3">Редактирование профиля</h1>
+                <p class="lead mb-0">
+                    Обновите контактные данные, профессиональную информацию и параметры поиска работы.
+                </p>
             </div>
-            <div class="card-body">
+            <div class="col-lg-4 mt-4 mt-lg-0 text-lg-end">
+                <a href="{% url 'profile' %}" class="btn btn-light btn-lg px-4">Назад в профиль</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-body p-4">
+                <h2 class="h5 fw-bold mb-4">Основная информация</h2>
+
                 <form method="post">
                     {% csrf_token %}
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="{{ form.username.id_for_label }}" class="form-label">Имя пользователя</label>
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger rounded-4">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.username.id_for_label }}" class="form-label fw-semibold">Имя пользователя</label>
                             {{ form.username }}
+                            {% if form.username.errors %}
+                                <div class="text-danger small mt-1">{{ form.username.errors }}</div>
+                            {% endif %}
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
+
+                        <div class="col-md-6">
+                            <label for="{{ form.email.id_for_label }}" class="form-label fw-semibold">Email</label>
                             {{ form.email }}
+                            {% if form.email.errors %}
+                                <div class="text-danger small mt-1">{{ form.email.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-12">
+                            <label for="{{ form.phone.id_for_label }}" class="form-label fw-semibold">Телефон</label>
+                            {{ form.phone }}
+                            {% if form.phone.errors %}
+                                <div class="text-danger small mt-1">{{ form.phone.errors }}</div>
+                            {% endif %}
                         </div>
                     </div>
-                    
+
+                    <hr class="my-4">
+
+                    <h3 class="h5 fw-bold mb-3">Профессиональная информация</h3>
+
                     <div class="mb-3">
-                        <label for="{{ form.phone.id_for_label }}" class="form-label">Телефон</label>
-                        {{ form.phone }}
-                    </div>
-                    
-                    <hr>
-                    <h5>Профессиональная информация</h5>
-                    
-                    <div class="mb-3">
-                        <label for="{{ form.skills.id_for_label }}" class="form-label">Навыки</label>
+                        <label for="{{ form.skills.id_for_label }}" class="form-label fw-semibold">Навыки</label>
                         {{ form.skills }}
                         {% if form.skills.help_text %}
-                            <div class="form-text text-muted">{{ form.skills.help_text }}</div>
+                            <div class="form-text">{{ form.skills.help_text }}</div>
+                        {% endif %}
+                        {% if form.skills.errors %}
+                            <div class="text-danger small mt-1">{{ form.skills.errors }}</div>
                         {% endif %}
                     </div>
-                    
+
                     <div class="mb-3">
-                        <label for="{{ form.experience.id_for_label }}" class="form-label">Опыт работы</label>
+                        <label for="{{ form.experience.id_for_label }}" class="form-label fw-semibold">Опыт работы</label>
                         {{ form.experience }}
                         {% if form.experience.help_text %}
-                            <div class="form-text text-muted">{{ form.experience.help_text }}</div>
+                            <div class="form-text">{{ form.experience.help_text }}</div>
+                        {% endif %}
+                        {% if form.experience.errors %}
+                            <div class="text-danger small mt-1">{{ form.experience.errors }}</div>
                         {% endif %}
                     </div>
-                    
+
                     <div class="mb-3">
-                        <label for="{{ form.portfolio.id_for_label }}" class="form-label">Портфолио</label>
+                        <label for="{{ form.portfolio.id_for_label }}" class="form-label fw-semibold">Портфолио</label>
                         {{ form.portfolio }}
                         {% if form.portfolio.help_text %}
-                            <div class="form-text text-muted">{{ form.portfolio.help_text }}</div>
+                            <div class="form-text">{{ form.portfolio.help_text }}</div>
+                        {% endif %}
+                        {% if form.portfolio.errors %}
+                            <div class="text-danger small mt-1">{{ form.portfolio.errors }}</div>
                         {% endif %}
                     </div>
-                    
-                    <div class="mb-3 form-check">
+
+                    <div class="mb-3">
+                        <label for="id_specialization" class="form-label fw-semibold">Специализация</label>
+                        <select name="specialization" id="id_specialization" class="form-select" multiple size="6">
+                            {% for cat in categories %}
+                                <option value="{{ cat.id }}" {% if cat in user.specialization.all %}selected{% endif %}>{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Выберите тематики, в которых вы специализируетесь.</div>
+                    </div>
+
+                    <div class="form-check mb-4">
                         {{ form.looking_for_work }}
                         <label class="form-check-label" for="{{ form.looking_for_work.id_for_label }}">
                             {{ form.looking_for_work.label }}
                         </label>
                         {% if form.looking_for_work.help_text %}
-                            <div class="form-text text-muted">{{ form.looking_for_work.help_text }}</div>
+                            <div class="form-text">{{ form.looking_for_work.help_text }}</div>
                         {% endif %}
                     </div>
-                    
-                    <div class="mb-3">
-                        <label for="id_specialization" class="form-label">Специализация (выберите категории)</label>
-                        <select name="specialization" id="id_specialization" class="form-select" multiple size="5">
-                            {% for cat in categories %}
-                                <option value="{{ cat.id }}" {% if cat in user.specialization.all %}selected{% endif %}>{{ cat.name }}</option>
-                            {% endfor %}
-                        </select>
-                        <div class="form-text">Выберите тематики, в которых вы специализируетесь</div>
-                    </div>
 
-                    <div class="d-flex justify-content-between mt-4">
-                        <a href="{% url 'profile' %}" class="btn btn-secondary">Отмена</a>
-                        <button type="submit" class="btn btn-success">Сохранить</button>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="submit" class="btn btn-primary px-4">Сохранить</button>
+                        <a href="{% url 'profile' %}" class="btn btn-outline-secondary px-4">Отмена</a>
                     </div>
                 </form>
             </div>
         </div>
     </div>
+
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-body p-4">
+                <h3 class="h6 fw-bold mb-3">Рекомендации по заполнению</h3>
+                <ul class="list-unstyled small text-muted mb-0">
+                    <li class="mb-2"><i class="bi bi-check-circle me-2 text-success"></i>укажите актуальные навыки</li>
+                    <li class="mb-2"><i class="bi bi-check-circle me-2 text-success"></i>кратко опишите опыт</li>
+                    <li class="mb-2"><i class="bi bi-check-circle me-2 text-success"></i>добавьте ссылку на портфолио</li>
+                    <li><i class="bi bi-check-circle me-2 text-success"></i>отметьте статус поиска работы, если это актуально</li>
+                </ul>
+            </div>
+        </div>
+    </div>
 </div>
+
+<style>
+    .edit-profile-hero {
+        background: linear-gradient(135deg, #0f766e, #14b8a6);
+    }
+
+    .form-control,
+    .form-select {
+        border-radius: 12px;
+    }
+</style>
 {% endblock %}

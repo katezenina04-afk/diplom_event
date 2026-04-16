@@ -1,192 +1,347 @@
 {% extends 'base.html' %}
 
-{% block title %}Календарь{% endblock %}
+{% block title %}Календарь мероприятий{% endblock %}
 
 {% block content %}
-<style>
-    .event-past {
-        background-color: #dc3545 !important;
-        opacity: 0.8;
-    }
-    .event-past:hover {
-        opacity: 1;
-    }
-    .event-upcoming {
-        background-color: #0dcaf0 !important;
-    }
-    
-    .calendar-cell {
-        min-width: 100px;
-        vertical-align: top;
-        height: 120px;
-    }
-    
-    .events-container {
-        max-height: 100px;
-        overflow-y: auto;
-        scrollbar-width: thin;
-    }
-    
-    .events-container::-webkit-scrollbar {
-        width: 4px;
-    }
-    
-    .event-badge {
-        font-size: 0.7rem;
-        white-space: normal;
-        word-wrap: break-word;
-        margin-bottom: 4px;
-        text-align: left;
-        display: block;
-    }
-    
-    .event-time {
-        font-size: 0.65rem;
-        background-color: rgba(0,0,0,0.2);
-        padding: 2px 4px;
-        border-radius: 3px;
-        margin-left: 4px;
-    }
-    
-    .more-indicator {
-        font-size: 0.7rem;
-        color: #0d6efd;
-        margin-top: 4px;
-        cursor: pointer;
-        text-decoration: underline;
-    }
-    
-    .more-indicator:hover {
-        color: #0a58ca;
-    }
-    
-    .hidden-events {
-        display: none;
-        margin-top: 8px;
-        padding-top: 8px;
-        border-top: 1px solid #dee2e6;
-    }
-    
-    .hidden-events.show {
-        display: block;
-    }
-    
-    .toggle-icon {
-        cursor: pointer;
-        font-size: 0.7rem;
-        margin-left: 4px;
-    }
-</style>
-
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1>Календарь мероприятий</h1>
-    <div>
-        <a href="{% url 'event_calendar' prev_year prev_month %}" class="btn btn-outline-primary">← {{ prev_month }}</a>
-        <span class="mx-3">{{ month_name }} {{ year }}</span>
-        <a href="{% url 'event_calendar' next_year next_month %}" class="btn btn-outline-primary">{{ next_month }} →</a>
+<section class="mb-4">
+    <div class="calendar-hero rounded-4 p-4 p-lg-5 text-white">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <span class="badge bg-light text-dark mb-3 px-3 py-2">Календарь событий</span>
+                <h1 class="display-6 fw-bold mb-3">Планируйте участие в мероприятиях по датам</h1>
+                <p class="lead mb-0">
+                    Просматривайте события по месяцам, находите ближайшие активности и переходите к карточке мероприятия прямо из календаря.
+                </p>
+            </div>
+            <div class="col-lg-4 mt-4 mt-lg-0 text-lg-end">
+                <a href="{% url 'event_list' %}" class="btn btn-light btn-lg px-4">
+                    Перейти к афише
+                </a>
+            </div>
+        </div>
     </div>
-</div>
+</section>
 
-<div class="table-responsive">
-    <table class="table table-bordered text-center">
-        <thead class="table-dark">
-            <tr>
-                <th style="width: 14%;">Пн</th>
-                <th style="width: 14%;">Вт</th>
-                <th style="width: 14%;">Ср</th>
-                <th style="width: 14%;">Чт</th>
-                <th style="width: 14%;">Пт</th>
-                <th style="width: 14%;">Сб</th>
-                <th style="width: 14%;">Вс</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for week in calendar_data %}
-            <tr>
-                {% for day_data in week %}
-                <td class="calendar-cell {% if day_data.is_today %}table-primary{% endif %}">
-                    {% if day_data.day %}
-                        <strong>{{ day_data.day }}</strong>
-                        
-                        {% if day_data.events %}
-                            {% with event_count=day_data.events|length %}
-                                {% if event_count <= 2 %}
-                                    <!-- Если 2 или меньше мероприятий — показываем все -->
-                                    <div class="events-container mt-1">
-                                        {% for item in day_data.events %}
-                                            <a href="{% url 'event_detail' item.event.id %}" 
-                                               class="badge {% if item.is_past %}event-past{% else %}event-upcoming{% endif %} event-badge"
-                                               title="{{ item.event.title }} ({{ item.event.start_datetime|time:"H:i" }})">
-                                                <i class="bi bi-calendar3"></i>
-                                                {{ item.event.title|truncatechars:18 }}
-                                                <span class="event-time">{{ item.event.start_datetime|time:"H:i" }}</span>
-                                            </a>
-                                        {% endfor %}
+<section class="mb-4">
+    <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <h2 class="h4 fw-bold mb-1">{{ month_name }} {{ year }}</h2>
+                    <p class="text-muted mb-0">Просмотр мероприятий по календарным датам</p>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <a href="{% url 'event_calendar' prev_year prev_month %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-chevron-left"></i> Предыдущий
+                    </a>
+                    <a href="{% url 'event_calendar' %}" class="btn btn-outline-primary">
+                        Сегодня
+                    </a>
+                    <a href="{% url 'event_calendar' next_year next_month %}" class="btn btn-outline-secondary">
+                        Следующий <i class="bi bi-chevron-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="row g-4">
+    <div class="col-xl-9">
+        <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+            <div class="card-header bg-white border-0 pt-4 px-4">
+                <div class="calendar-weekdays">
+                    <div>Пн</div>
+                    <div>Вт</div>
+                    <div>Ср</div>
+                    <div>Чт</div>
+                    <div>Пт</div>
+                    <div>Сб</div>
+                    <div>Вс</div>
+                </div>
+            </div>
+
+            <div class="card-body px-4 pb-4 pt-0">
+                <div class="calendar-grid">
+                    {% for week in calendar_data %}
+                        {% for day_data in week %}
+                            {% if day_data.day %}
+                                <div class="calendar-cell {% if day_data.is_today %}today{% endif %}">
+                                    <div class="calendar-day-number">
+                                        {{ day_data.day }}
                                     </div>
-                                {% else %}
-                                    <!-- Если 3 и больше — показываем первые 2 + кнопку "ещё N" -->
-                                    <div class="events-container mt-1">
-                                        {% for item in day_data.events|slice:":2" %}
-                                            <a href="{% url 'event_detail' item.event.id %}" 
-                                               class="badge {% if item.is_past %}event-past{% else %}event-upcoming{% endif %} event-badge"
-                                               title="{{ item.event.title }} ({{ item.event.start_datetime|time:"H:i" }})">
-                                                <i class="bi bi-calendar3"></i>
-                                                {{ item.event.title|truncatechars:18 }}
-                                                <span class="event-time">{{ item.event.start_datetime|time:"H:i" }}</span>
-                                            </a>
-                                        {% endfor %}
-                                        
-                                        <div class="more-indicator" onclick="toggleEvents(this)">
-                                            📋 + ещё {{ event_count|add:"-2" }} мероприятий 
-                                            <i class="bi bi-chevron-down toggle-icon"></i>
-                                        </div>
-                                        
-                                        <div class="hidden-events">
-                                            {% for item in day_data.events|slice:"2:" %}
-                                                <a href="{% url 'event_detail' item.event.id %}" 
-                                                   class="badge {% if item.is_past %}event-past{% else %}event-upcoming{% endif %} event-badge mt-1"
-                                                   title="{{ item.event.title }} ({{ item.event.start_datetime|time:"H:i" }})">
-                                                    <i class="bi bi-calendar3"></i>
-                                                    {{ item.event.title|truncatechars:18 }}
-                                                    <span class="event-time">{{ item.event.start_datetime|time:"H:i" }}</span>
+
+                                    {% if day_data.events %}
+                                        <div class="calendar-events">
+                                            {% for item in day_data.events|slice:":2" %}
+                                                <a href="{% url 'event_detail' item.event.id %}"
+                                                   class="calendar-event-item {% if item.is_past %}past{% else %}active{% endif %}">
+                                                    <div class="calendar-event-time">
+                                                        {{ item.event.start_datetime|date:"H:i" }}
+                                                    </div>
+                                                    <div class="calendar-event-title">
+                                                        {{ item.event.title|truncatechars:34 }}
+                                                    </div>
                                                 </a>
                                             {% endfor %}
+
+                                            {% if day_data.events|length > 2 %}
+                                                <details class="calendar-more">
+                                                    <summary class="calendar-more-summary">
+                                                        Еще {{ day_data.events|length|add:"-2" }}
+                                                    </summary>
+
+                                                    <div class="calendar-more-list">
+                                                        {% for item in day_data.events|slice:"2:" %}
+                                                            <a href="{% url 'event_detail' item.event.id %}"
+                                                               class="calendar-event-item {% if item.is_past %}past{% else %}active{% endif %}">
+                                                                <div class="calendar-event-time">
+                                                                    {{ item.event.start_datetime|date:"H:i" }}
+                                                                </div>
+                                                                <div class="calendar-event-title">
+                                                                    {{ item.event.title|truncatechars:34 }}
+                                                                </div>
+                                                            </a>
+                                                        {% endfor %}
+                                                    </div>
+                                                </details>
+                                            {% endif %}
                                         </div>
-                                    </div>
-                                {% endif %}
-                            {% endwith %}
-                        {% else %}
-                            <div class="text-muted small mt-2">—</div>
-                        {% endif %}
-                    {% endif %}
-                </td>
-                {% endfor %}
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                                    {% else %}
+                                        <div class="calendar-empty small text-muted">
+                                            —
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% else %}
+                                <div class="calendar-cell empty"></div>
+                            {% endif %}
+                        {% endfor %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3">
+        <div class="card shadow-sm border-0 rounded-4 mb-4">
+            <div class="card-body p-4">
+                <h3 class="h6 fw-bold mb-3">Обозначения</h3>
+
+                <div class="d-flex align-items-center mb-2">
+                    <span class="legend-dot legend-active me-2"></span>
+                    <span class="small">Актуальное мероприятие</span>
+                </div>
+
+                <div class="d-flex align-items-center mb-2">
+                    <span class="legend-dot legend-past me-2"></span>
+                    <span class="small">Прошедшее мероприятие</span>
+                </div>
+
+                <div class="d-flex align-items-center">
+                    <span class="legend-dot legend-today me-2"></span>
+                    <span class="small">Сегодняшняя дата</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-body p-4">
+                <h3 class="h6 fw-bold mb-3">Что можно сделать</h3>
+                <ul class="list-unstyled small text-muted mb-0">
+                    <li class="mb-2"><i class="bi bi-check-circle me-2 text-success"></i>посмотреть все события месяца</li>
+                    <li class="mb-2"><i class="bi bi-check-circle me-2 text-success"></i>перейти к карточке мероприятия</li>
+                    <li class="mb-2"><i class="bi bi-check-circle me-2 text-success"></i>быстро найти ближайшие даты</li>
+                    <li><i class="bi bi-check-circle me-2 text-success"></i>сопоставить события по дням</li>
+                </ul>
+            </div>
+        </div>
+    </div>
 </div>
 
-<script>
-    function toggleEvents(element) {
-        const hiddenDiv = element.nextElementSibling;
-        const icon = element.querySelector('.toggle-icon');
-        
-        if (hiddenDiv.classList.contains('show')) {
-            hiddenDiv.classList.remove('show');
-            icon.classList.remove('bi-chevron-up');
-            icon.classList.add('bi-chevron-down');
-        } else {
-            hiddenDiv.classList.add('show');
-            icon.classList.remove('bi-chevron-down');
-            icon.classList.add('bi-chevron-up');
+<style>
+    .calendar-hero {
+        background: linear-gradient(135deg, #0f766e, #14b8a6);
+    }
+
+    .calendar-weekdays {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 12px;
+        text-align: center;
+        font-weight: 700;
+        color: #6b7280;
+        margin-bottom: 12px;
+    }
+
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 12px;
+    }
+
+    .calendar-cell {
+        min-height: 180px;
+        background: #fff;
+        border: 1px solid rgba(0,0,0,0.06);
+        border-radius: 18px;
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        transition: box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    .calendar-cell:hover {
+        box-shadow: 0 .5rem 1rem rgba(0,0,0,.06);
+        transform: translateY(-2px);
+    }
+
+    .calendar-cell.empty {
+        background: #f8fafc;
+        border-style: dashed;
+    }
+
+    .calendar-cell.today {
+        border: 2px solid #2563eb;
+        background: #eff6ff;
+    }
+
+    .calendar-day-number {
+        font-weight: 700;
+        font-size: 1rem;
+        margin-bottom: 10px;
+    }
+
+    .calendar-events {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 4px;
+    }
+
+    .calendar-event-item {
+        display: block;
+        text-decoration: none;
+        border-radius: 12px;
+        padding: 8px 10px;
+        transition: all 0.2s ease;
+    }
+
+    .calendar-event-item.active {
+        background: #eef2ff;
+        color: #1e3a8a;
+        border: 1px solid rgba(37, 99, 235, 0.12);
+    }
+
+    .calendar-event-item.active:hover {
+        background: #dbeafe;
+    }
+
+    .calendar-event-item.past {
+        background: #f3f4f6;
+        color: #6b7280;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .calendar-event-item.past:hover {
+        background: #e5e7eb;
+    }
+
+    .calendar-event-time {
+        font-size: 0.75rem;
+        font-weight: 700;
+        margin-bottom: 2px;
+    }
+
+    .calendar-event-title {
+        font-size: 0.8rem;
+        line-height: 1.25;
+    }
+
+    .calendar-more {
+        margin-top: 2px;
+    }
+
+    .calendar-more-summary {
+        cursor: pointer;
+        list-style: none;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #2563eb;
+        padding: 4px 2px;
+        user-select: none;
+    }
+
+    .calendar-more-summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .calendar-more-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 6px;
+    }
+
+    .calendar-empty {
+        margin-top: auto;
+    }
+
+    .legend-dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .legend-active {
+        background: #2563eb;
+    }
+
+    .legend-past {
+        background: #9ca3af;
+    }
+
+    .legend-today {
+        background: #0ea5e9;
+    }
+
+    @media (max-width: 1199px) {
+        .calendar-cell {
+            min-height: 160px;
         }
     }
-</script>
 
-{% if not calendar_data %}
-    <div class="alert alert-info text-center mt-4">
-        <i class="bi bi-calendar-x"></i> Нет мероприятий на этот месяц
-    </div>
-{% endif %}
+    @media (max-width: 991px) {
+        .calendar-grid,
+        .calendar-weekdays {
+            gap: 8px;
+        }
+
+        .calendar-cell {
+            min-height: 140px;
+            padding: 10px;
+        }
+
+        .calendar-event-title {
+            font-size: 0.75rem;
+        }
+    }
+
+    @media (max-width: 767px) {
+        .calendar-grid,
+        .calendar-weekdays {
+            grid-template-columns: repeat(1, 1fr);
+        }
+
+        .calendar-cell.empty {
+            display: none;
+        }
+
+        .calendar-cell {
+            min-height: auto;
+        }
+    }
+</style>
 {% endblock %}

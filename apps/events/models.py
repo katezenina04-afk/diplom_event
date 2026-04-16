@@ -33,6 +33,10 @@ class Event(models.Model):
     start_datetime = models.DateTimeField('Дата и время начала')
     end_datetime = models.DateTimeField('Дата и время окончания', blank=True, null=True)
     location = models.CharField('Место проведения', max_length=255)  # только адрес
+    venue_name = models.CharField('Название площадки', max_length=255, blank=True)
+    external_url = models.URLField('Внешняя ссылка', blank=True, null=True)
+    venue_url = models.URLField('Сайт площадки', blank=True, null=True)
+    organizer_url = models.URLField('Сайт организатора', blank=True, null=True)
     
     category = models.ForeignKey(
         Category, 
@@ -175,6 +179,29 @@ class Favorite(models.Model):
     def __str__(self):
         return f"{self.user.username} → {self.event.title}"
 
+class OrganizerSubscription(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='organizer_subscriptions',
+        verbose_name='Подписчик'
+    )
+    organizer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='subscribers',
+        verbose_name='Организатор'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Подписка на организатора'
+        verbose_name_plural = 'Подписки на организаторов'
+        unique_together = ['user', 'organizer']
+
+    def __str__(self):
+        return f"{self.user.username} подписан на {self.organizer.username}"
+
 class Notification(models.Model):
     """Уведомление для пользователя"""
     NOTIFICATION_TYPES = [
@@ -188,6 +215,7 @@ class Notification(models.Model):
         ('event_pending', 'Заявка на мероприятие'),
         ('event_approved', 'Мероприятие одобрено'),
         ('event_rejected', 'Мероприятие отклонено'),
+        ('new_event_from_organizer', 'Новое мероприятие от организатора'),
     ]
     
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='notifications')

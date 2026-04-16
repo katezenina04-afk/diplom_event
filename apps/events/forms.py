@@ -1,16 +1,16 @@
 from django import forms
 from django.db import models
 from django.conf import settings
-from .models import Event
 from .models import Event, Category, Registration, Comment, Like, Review, Favorite
 
 class EventForm(forms.ModelForm):
     class Meta:
         model = Event
         fields = [
-            'title', 'description', 'image', 
-            'start_datetime', 'end_datetime', 'location',
-            'category',  # теперь одно поле, а не categories
+            'title', 'description', 'image',
+            'start_datetime', 'end_datetime', 'location', 'venue_name',
+            'external_url', 'venue_url', 'organizer_url',
+            'category',
             'price', 'is_free', 'max_participants'
         ]
         widgets = {
@@ -18,8 +18,12 @@ class EventForm(forms.ModelForm):
             'end_datetime': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
             'description': forms.Textarea(attrs={'rows': 5, 'class': 'form-control'}),
             'location': forms.TextInput(attrs={'class': 'form-control'}),
+            'venue_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'external_url': forms.URLInput(attrs={'class': 'form-control'}),
+            'venue_url': forms.URLInput(attrs={'class': 'form-control'}),
+            'organizer_url': forms.URLInput(attrs={'class': 'form-control'}),
             'title': forms.TextInput(attrs={'class': 'form-control'}),
-            'category': forms.Select(attrs={'class': 'form-select'}),  # выпадающий список
+            'category': forms.Select(attrs={'class': 'form-select'}),
             'price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'max_participants': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
         }
@@ -30,6 +34,10 @@ class EventForm(forms.ModelForm):
             'start_datetime': 'Дата и время начала',
             'end_datetime': 'Дата и время окончания',
             'location': 'Место проведения',
+            'venue_name': 'Название площадки',
+            'external_url': 'Внешняя ссылка',
+            'venue_url': 'Сайт площадки',
+            'organizer_url': 'Сайт организатора',
             'category': 'Категория',
             'price': 'Цена (руб)',
             'is_free': 'Бесплатное мероприятие',
@@ -94,33 +102,3 @@ class InviteSpecialistForm(forms.Form):
         label='Сообщение'
     )
 
-class Assignment(models.Model):
-    """Назначение специалиста на мероприятие"""
-    ROLE_CHOICES = [
-        ('host', 'Ведущий'),
-        ('speaker', 'Докладчик'),
-        ('assistant', 'Ассистент'),
-        ('participant', 'Участник'),
-    ]
-    
-    STATUS_CHOICES = [
-        ('pending', 'Ожидает'),
-        ('confirmed', 'Подтверждён'),
-        ('rejected', 'Отклонён'),
-    ]
-    
-    event = models.ForeignKey('Event', on_delete=models.CASCADE, related_name='assignments')
-    specialist = models.ForeignKey('accounts.User', on_delete=models.CASCADE, related_name='assignments')
-    role = models.CharField('Роль', max_length=20, choices=ROLE_CHOICES, default='participant')
-    status = models.CharField('Статус', max_length=20, choices=STATUS_CHOICES, default='pending')
-    message = models.TextField('Сообщение', blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    class Meta:
-        verbose_name = 'Назначение'
-        verbose_name_plural = 'Назначения'
-        unique_together = ['event', 'specialist']
-    
-    def __str__(self):
-        return f"{self.specialist.username} → {self.event.title} ({self.get_role_display()})"

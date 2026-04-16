@@ -3,52 +3,105 @@
 {% block title %}Уведомления{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
-            <li class="breadcrumb-item active">Уведомления</li>
-        </ol>
-    </nav>
+<section class="mb-4">
+    <div class="notifications-hero rounded-4 p-4 p-lg-5 text-white">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <span class="badge bg-light text-dark mb-3 px-3 py-2">Системные уведомления</span>
+                <h1 class="display-6 fw-bold mb-3">Уведомления</h1>
+                <p class="lead mb-0">
+                    Здесь отображаются приглашения, результаты модерации, новые события от организаторов и другие важные действия в системе.
+                </p>
+            </div>
 
-    <h1>🔔 Уведомления</h1>
+            <div class="col-lg-4 mt-4 mt-lg-0 text-lg-end">
+                <a href="{% url 'home' %}" class="btn btn-light btn-lg px-4">На главную</a>
+            </div>
+        </div>
+    </div>
+</section>
 
+<section>
     {% if notifications %}
-        <div class="list-group">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <h2 class="h5 fw-bold mb-0">История уведомлений</h2>
+            <span class="text-muted small">Всего: {{ notifications|length }}</span>
+        </div>
+
+        <div class="row g-3">
             {% for notif in notifications %}
-                {% if notif.notification_type == 'invitation' %}
-                    <div class="list-group-item {% if not notif.is_read %}list-group-item-primary{% endif %}">
-                        <div class="d-flex justify-content-between">
-                            <strong>📨 {{ notif.title }}</strong>
-                            <small class="text-muted">{{ notif.created_at|date:"d.m.Y H:i" }}</small>
-                        </div>
-                        <p class="mb-2 mt-1">{{ notif.message|linebreaksbr }}</p>
-                        <div class="mt-2">
-                            <a href="{{ notif.link }}" class="btn btn-sm btn-success">
-                                <i class="bi bi-check-lg"></i> Принять
-                            </a>
+                <div class="col-12">
+                    <div class="card notification-card border-0 shadow-sm rounded-4 {% if not notif.is_read %}notification-unread{% endif %}">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                                <div>
+                                    <h3 class="h6 fw-bold mb-2">
+                                        {% if notif.notification_type == 'invitation' %}
+                                            📨 {{ notif.title }}
+                                        {% elif notif.notification_type == 'event_approved' %}
+                                            ✅ {{ notif.title }}
+                                        {% elif notif.notification_type == 'event_rejected' %}
+                                            ❌ {{ notif.title }}
+                                        {% elif notif.notification_type == 'new_event_from_organizer' %}
+                                            ⭐ {{ notif.title }}
+                                        {% else %}
+                                            🔔 {{ notif.title }}
+                                        {% endif %}
+                                    </h3>
+                                    <p class="text-muted mb-2">{{ notif.message|linebreaksbr }}</p>
+                                </div>
+
+                                <div class="text-muted small text-nowrap">
+                                    {{ notif.created_at|date:"d.m.Y H:i" }}
+                                </div>
+                            </div>
+
+                            {% if notif.link %}
+                                <div class="mt-3">
+                                    {% if notif.notification_type == 'invitation' %}
+                                        <a href="{{ notif.link }}" class="btn btn-success btn-sm">
+                                            <i class="bi bi-check-lg"></i> Перейти к приглашению
+                                        </a>
+                                    {% else %}
+                                        <a href="{{ notif.link }}" class="btn btn-outline-primary btn-sm">
+                                            Перейти
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
-                {% else %}
-                    <div class="list-group-item {% if not notif.is_read %}list-group-item-primary{% endif %}">
-                        <div class="d-flex justify-content-between">
-                            <strong>{{ notif.title }}</strong>
-                            <small class="text-muted">{{ notif.created_at|date:"d.m.Y H:i" }}</small>
-                        </div>
-                        <p class="mb-1">{{ notif.message }}</p>
-                        {% if notif.link %}
-                            <a href="{{ notif.link }}" class="btn btn-sm btn-outline-primary mt-2">Перейти</a>
-                        {% endif %}
-                    </div>
-                {% endif %}
+                </div>
             {% endfor %}
         </div>
     {% else %}
-        <div class="alert alert-info text-center py-5">
-            <i class="bi bi-bell-slash" style="font-size: 3rem;"></i>
-            <h4 class="mt-3">У вас пока нет уведомлений</h4>
-            <p class="mb-0">Когда появятся новые уведомления, они будут отображаться здесь.</p>
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-bell-slash fs-1 text-secondary mb-3"></i>
+                <h3 class="h5 fw-bold">У вас пока нет уведомлений</h3>
+                <p class="text-muted mb-0">Когда появятся новые системные сообщения, они будут отображаться здесь.</p>
+            </div>
         </div>
     {% endif %}
-</div>
+</section>
+
+<style>
+    .notifications-hero {
+        background: linear-gradient(135deg, #7c3aed, #ec4899);
+    }
+
+    .notification-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .notification-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 .75rem 1.5rem rgba(0,0,0,.06) !important;
+    }
+
+    .notification-unread {
+        border-left: 4px solid #2563eb !important;
+        background: #f8fbff;
+    }
+</style>
 {% endblock %}

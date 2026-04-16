@@ -3,24 +3,113 @@
 {% block title %}Редактировать: {{ event.title }}{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-8 offset-md-2">
-        <div class="card">
-            <div class="card-header bg-warning">
-                <h4 class="mb-0">Редактировать: {{ event.title }}</h4>
+<section class="mb-4">
+    <div class="edit-hero rounded-4 p-4 p-lg-5 text-white">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <span class="badge bg-light text-dark mb-3 px-3 py-2">Редактирование события</span>
+                <h1 class="display-6 fw-bold mb-3">{{ event.title }}</h1>
+                <p class="lead mb-0">
+                    Обновите информацию о мероприятии, скорректируйте описание, дату, площадку и дополнительные параметры.
+                </p>
             </div>
-            <div class="card-body">
+            <div class="col-lg-4 mt-4 mt-lg-0 text-lg-end">
+                <a href="{% url 'event_detail' event.id %}" class="btn btn-light btn-lg px-4">К мероприятию</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-body p-4">
+                <h2 class="h5 fw-bold mb-4">Редактирование данных</h2>
+
                 <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
-                    {{ form.as_p }}
-                    <button type="submit" class="btn btn-success">Сохранить</button>
-                    <a href="{% url 'event_detail' event.id %}" class="btn btn-secondary">Отмена</a>
-                    <a href="{% url 'search_specialists' event.id %}" class="btn btn-outline-info mt-2">
-                        <i class="bi bi-people"></i> Найти специалистов
-                    </a>
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger rounded-4">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+
+                    <div class="row g-3">
+                        {% for field in form %}
+                            <div class="{% if field.name == 'description' %}col-12{% elif field.name == 'image' %}col-12{% elif field.name == 'is_free' %}col-12{% else %}col-md-6{% endif %}">
+                                <label for="{{ field.id_for_label }}" class="form-label fw-semibold">
+                                    {{ field.label }}
+                                </label>
+
+                                {{ field }}
+
+                                {% if field.help_text %}
+                                    <div class="form-text">{{ field.help_text }}</div>
+                                {% endif %}
+
+                                {% if field.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {{ field.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary px-4">Сохранить изменения</button>
+                        <a href="{% url 'event_detail' event.id %}" class="btn btn-outline-secondary px-4">Отмена</a>
+                        <a href="{% url 'search_specialists' event.id %}" class="btn btn-outline-info px-4">
+                            <i class="bi bi-people"></i> Найти специалистов
+                        </a>
+                    </div>
                 </form>
             </div>
         </div>
     </div>
+
+    <div class="col-lg-4">
+        {% if event.moderation_comment %}
+            <div class="card shadow-sm border-0 rounded-4 mb-4">
+                <div class="card-body p-4">
+                    <h3 class="h6 fw-bold mb-3 text-danger">Комментарий модератора</h3>
+                    <div class="alert alert-danger rounded-4 mb-0">
+                        {{ event.moderation_comment }}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-body p-4">
+                <h3 class="h6 fw-bold mb-3">Текущий статус</h3>
+                <p class="mb-0">
+                    {% if event.status == 'draft' %}
+                        <span class="badge bg-secondary">Черновик</span>
+                    {% elif event.status == 'pending' %}
+                        <span class="badge bg-warning text-dark">На модерации</span>
+                    {% elif event.status == 'published' %}
+                        <span class="badge bg-success">Опубликовано</span>
+                    {% elif event.status == 'rejected' %}
+                        <span class="badge bg-danger">Отклонено</span>
+                    {% else %}
+                        <span class="badge bg-secondary">{{ event.get_status_display }}</span>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
 </div>
+
+<style>
+    .edit-hero {
+        background: linear-gradient(135deg, #f59e0b, #ef4444);
+    }
+
+    .form-control,
+    .form-select {
+        border-radius: 12px;
+    }
+</style>
 {% endblock %}

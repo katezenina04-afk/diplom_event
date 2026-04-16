@@ -3,36 +3,114 @@
 {% block title %}Мои записи{% endblock %}
 
 {% block content %}
-<h1>Мои записи</h1>
+<section class="mb-4">
+    <div class="registrations-hero rounded-4 p-4 p-lg-5 text-white">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <span class="badge bg-light text-dark mb-3 px-3 py-2">Личный кабинет</span>
+                <h1 class="display-6 fw-bold mb-3">Мои записи на мероприятия</h1>
+                <p class="lead mb-0">
+                    Здесь отображаются все мероприятия, на которые вы записаны, а также коды для входа и текущий статус участия.
+                </p>
+            </div>
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Мероприятие</th>
-            <th>Дата</th>
-            <th>Место</th>
-            <th>Категория</th>
-            <th>Код для входа</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for reg in registrations %}
-        <tr>
-            <td><a href="{% url 'event_detail' reg.event.id %}">{{ reg.event.title }}</a></td>
-            <td>{{ reg.event.start_datetime|date:"d.m.Y H:i" }}</td>
-            <td>{{ reg.event.location }}</td>
-            <td>{% if reg.event.category %}{{ reg.event.category.name }}{% else %}—{% endif %}</td>
-            <td><strong class="text-success">{{ reg.entry_code }}</strong></td>
-            <td>
-                <a href="{% url 'cancel_registration' reg.id %}" class="btn btn-sm btn-danger" onclick="return confirm('Отменить запись?')">Отменить</a>
-            </td>
-        </tr>
-        {% empty %}
-        <tr>
-            <td colspan="6">Вы ещё не записаны ни на одно мероприятие</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+            <div class="col-lg-4 mt-4 mt-lg-0 text-lg-end">
+                <a href="{% url 'event_list' %}" class="btn btn-light btn-lg px-4">Найти мероприятие</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section>
+    <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-body p-4">
+            {% if registrations %}
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Мероприятие</th>
+                                <th>Дата</th>
+                                <th>Место</th>
+                                <th>Категория</th>
+                                <th>Код</th>
+                                <th>Статус</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for reg in registrations %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'event_detail' reg.event.id %}" class="fw-semibold text-decoration-none">
+                                            {{ reg.event.title }}
+                                        </a>
+                                    </td>
+                                    <td>{{ reg.event.start_datetime|date:"d.m.Y H:i" }}</td>
+                                    <td>{{ reg.event.location }}</td>
+                                    <td>
+                                        {% if reg.event.category %}
+                                            <span class="badge bg-light text-dark">{{ reg.event.category.name }}</span>
+                                        {% else %}
+                                            —
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success-subtle text-success-emphasis fs-6">
+                                            {{ reg.entry_code }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if reg.status == 'confirmed' %}
+                                            <span class="badge bg-success">Подтверждено</span>
+                                        {% elif reg.status == 'pending' %}
+                                            <span class="badge bg-warning text-dark">Ожидание</span>
+                                        {% elif reg.status == 'attended' %}
+                                            <span class="badge bg-primary">Посетил</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ reg.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="{% url 'cancel_registration' reg.id %}"
+                                           class="btn btn-sm btn-outline-danger"
+                                           onclick="return confirm('Отменить запись?')">
+                                            Отменить
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-ticket-perforated fs-1 text-secondary mb-3"></i>
+                    <h3 class="h5 fw-bold">Вы ещё не записаны ни на одно мероприятие</h3>
+                    <p class="text-muted mb-3">Перейдите в афишу и выберите интересное событие для участия.</p>
+                    <a href="{% url 'event_list' %}" class="btn btn-primary">Открыть афишу</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<style>
+    .registrations-hero {
+        background: linear-gradient(135deg, #2563eb, #0f766e);
+    }
+
+    .table thead th {
+        border-bottom: 1px solid rgba(0,0,0,0.08);
+        color: #6b7280;
+        font-weight: 700;
+        font-size: 0.9rem;
+    }
+
+    .table tbody td {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+        border-color: rgba(0,0,0,0.05);
+    }
+</style>
 {% endblock %}

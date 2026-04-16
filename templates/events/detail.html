@@ -7,18 +7,20 @@
 <div class="row">
     <div class="col-md-8">
         <h1>{{ event.title }}</h1>
+
         {% if event.image %}
             <img src="{{ event.image.url }}" class="img-fluid mb-3" alt="{{ event.title }}">
         {% endif %}
-        
+
         {% if event.category %}
             <div class="mb-2">
                 <span class="badge bg-info">{{ event.category.name }}</span>
             </div>
         {% endif %}
-        
+
         <p><strong>Описание:</strong> {{ event.description|linebreaks }}</p>
     </div>
+
     <div class="col-md-4">
         <div class="card mb-3">
             <div class="card-header bg-primary text-white">
@@ -26,52 +28,117 @@
             </div>
             <div class="card-body">
                 <p><strong>Дата начала:</strong> {{ event.start_datetime|date:"d.m.Y H:i" }}</p>
+
                 {% if event.end_datetime %}
                     <p><strong>Дата окончания:</strong> {{ event.end_datetime|date:"d.m.Y H:i" }}</p>
                 {% endif %}
+
                 <p><strong>Место:</strong> {{ event.location }}</p>
-                <p><strong>Цена:</strong> {% if event.is_free %}Бесплатно{% else %}{{ event.price }} руб.{% endif %}</p>
-                <p><strong>Участников:</strong> {{ event.get_participants_count }}{% if event.max_participants %} / {{ event.max_participants }}{% endif %}</p>
-                <p><strong>Организатор:</strong> {{ event.creator.username }}</p>
-                
-                <!-- Баннер о прошедшем мероприятии -->
+
+                {% if event.venue_name %}
+                    <p><strong>Площадка:</strong> {{ event.venue_name }}</p>
+                {% endif %}
+
+                <p>
+                    <strong>Цена:</strong>
+                    {% if event.is_free %}
+                        Бесплатно
+                    {% else %}
+                        {{ event.price }} руб.
+                    {% endif %}
+                </p>
+
+                <p>
+                    <strong>Участников:</strong>
+                    {{ event.get_participants_count }}
+                    {% if event.max_participants %}
+                        / {{ event.max_participants }}
+                    {% endif %}
+                </p>
+
+                <p>
+                    <strong>Организатор:</strong>
+                    <a href="{% url 'organizer_profile' event.creator.id %}">
+                        {{ event.creator.username }}
+                    </a>
+                </p>
+
+                {% if user.is_authenticated and event.creator != user %}
+                    <div class="mb-3">
+                        <a href="{% url 'toggle_organizer_subscription' event.creator.id %}"
+                           class="btn btn-outline-primary w-100">
+                            {% if is_subscribed_to_organizer %}
+                                Отписаться от организатора
+                            {% else %}
+                                Подписаться на организатора
+                            {% endif %}
+                        </a>
+                    </div>
+                {% endif %}
+
+                <div class="d-grid gap-2 mb-3">
+                    {% if event.venue_url %}
+                        <a href="{{ event.venue_url }}" target="_blank" class="btn btn-outline-secondary">
+                            Сайт площадки
+                        </a>
+                    {% endif %}
+
+                    {% if event.organizer_url %}
+                        <a href="{{ event.organizer_url }}" target="_blank" class="btn btn-outline-secondary">
+                            Сайт организатора
+                        </a>
+                    {% endif %}
+
+                    {% if event.external_url %}
+                        <a href="{{ event.external_url }}" target="_blank" class="btn btn-outline-secondary">
+                            Подробнее
+                        </a>
+                    {% endif %}
+                </div>
+
                 {% if is_past %}
                     <div class="alert alert-danger mb-3">
-                        <i class="bi bi-calendar-x"></i> 
+                        <i class="bi bi-calendar-x"></i>
                         <strong>Это мероприятие уже прошло!</strong>
                         <p class="mb-0 mt-1">Вы не можете записаться на прошедшее мероприятие.</p>
                     </div>
                 {% endif %}
-                
-                <!-- ЛАЙК -->
+
                 <div class="text-center mb-3">
                     <button id="like-button" class="btn btn-outline-danger" data-event-id="{{ event.id }}">
                         <i class="bi bi-heart{% if user_liked %}-fill{% endif %}"></i>
                         <span id="likes-count">{{ event.likes.count }}</span> ❤️
                     </button>
                 </div>
-                
-                <!-- ИЗБРАННОЕ -->
+
                 <div class="text-center mb-3">
                     <button id="favorite-button" class="btn btn-outline-warning" data-event-id="{{ event.id }}">
                         <i class="bi bi-star{% if user_favorited %}-fill{% endif %}"></i>
                         <span id="favorites-count">{{ event.favorites.count }}</span> ⭐
                     </button>
                 </div>
-                
+
                 {% if user.is_authenticated %}
                     {% if event.creator == user %}
                         <div class="d-grid gap-2">
                             <a href="{% url 'edit_event' event.id %}" class="btn btn-warning">Редактировать</a>
-                            <a href="{% url 'delete_event' event.id %}" class="btn btn-danger" onclick="return confirm('Удалить мероприятие?')">Удалить</a>
-                            <a href="{% url 'search_specialists' event.id %}" class="btn btn-outline-info">🔍 Найти специалистов</a>
+                            <a href="{% url 'delete_event' event.id %}"
+                               class="btn btn-danger"
+                               onclick="return confirm('Удалить мероприятие?')">
+                                Удалить
+                            </a>
+                            <a href="{% url 'search_specialists' event.id %}" class="btn btn-outline-info">
+                                🔍 Найти специалистов
+                            </a>
                         </div>
                     {% else %}
                         {% if has_pending_invitation %}
                             <div class="alert alert-info">
                                 <strong>📨 Вы приглашены на это мероприятие!</strong>
                                 <p class="mb-2">Организатор пригласил вас принять участие.</p>
-                                <a href="{% url 'accept_invitation' registration.id %}" class="btn btn-success w-100">Принять приглашение</a>
+                                <a href="{% url 'accept_invitation' registration.id %}" class="btn btn-success w-100">
+                                    Принять приглашение
+                                </a>
                             </div>
                         {% elif is_registered %}
                             <div class="alert alert-success">
@@ -80,12 +147,19 @@
                                     <p class="mb-0 mt-2"><strong>Код для входа:</strong> {{ registration.entry_code }}</p>
                                 {% endif %}
                             </div>
+
                             {% if not is_past %}
-                                <a href="{% url 'cancel_registration' registration.id %}" class="btn btn-danger w-100" onclick="return confirm('Отменить запись?')">Отменить запись</a>
+                                <a href="{% url 'cancel_registration' registration.id %}"
+                                   class="btn btn-danger w-100"
+                                   onclick="return confirm('Отменить запись?')">
+                                    Отменить запись
+                                </a>
                             {% endif %}
                         {% else %}
                             {% if not is_past %}
-                                <a href="{% url 'register_for_event' event.id %}" class="btn btn-success w-100">Записаться</a>
+                                <a href="{% url 'register_for_event' event.id %}" class="btn btn-success w-100">
+                                    Записаться
+                                </a>
                             {% else %}
                                 <button class="btn btn-secondary w-100" disabled>Запись закрыта</button>
                             {% endif %}
@@ -99,6 +173,56 @@
     </div>
 </div>
 
+{% if organizer_other_events %}
+<div class="row mt-4">
+    <div class="col-md-8">
+        <details class="card">
+            <summary class="card-header bg-light d-flex justify-content-between align-items-center" style="cursor: pointer; list-style: none;">
+                <span>
+                    <a href="{% url 'organizer_profile' event.creator.id %}" class="text-decoration-none fw-semibold">
+                        Другие мероприятия организатора
+                    </a>
+                </span>
+                <span>▼</span>
+            </summary>
+            <div class="card-body">
+                <div class="list-group">
+                    {% for other_event in organizer_other_events %}
+                        <a href="{% url 'event_detail' other_event.id %}" class="list-group-item list-group-item-action">
+                            <strong>{{ other_event.title }}</strong><br>
+                            <small class="text-muted">{{ other_event.start_datetime|date:"d.m.Y H:i" }}</small>
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </details>
+    </div>
+</div>
+{% endif %}
+
+{% if same_location_events %}
+<div class="row mt-4">
+    <div class="col-md-8">
+        <details class="card">
+            <summary class="card-header bg-light d-flex justify-content-between align-items-center" style="cursor: pointer; list-style: none;">
+                <span class="fw-semibold">Другие мероприятия на этой площадке</span>
+                <span>▼</span>
+            </summary>
+            <div class="card-body">
+                <div class="list-group">
+                    {% for location_event in same_location_events %}
+                        <a href="{% url 'event_detail' location_event.id %}" class="list-group-item list-group-item-action">
+                            <strong>{{ location_event.title }}</strong><br>
+                            <small class="text-muted">{{ location_event.start_datetime|date:"d.m.Y H:i" }}</small>
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </details>
+    </div>
+</div>
+{% endif %}
+
 <!-- КОММЕНТАРИИ -->
 <div class="row mt-4">
     <div class="col-md-8">
@@ -110,13 +234,16 @@
                 {% if user.is_authenticated %}
                     <form method="post" action="{% url 'add_comment' event.id %}" class="mb-4">
                         {% csrf_token %}
-                        <textarea name="text" class="form-control mb-2" rows="3" placeholder="Напишите комментарий..."></textarea>
+                        <textarea name="text"
+                                  class="form-control mb-2"
+                                  rows="3"
+                                  placeholder="Напишите комментарий..."></textarea>
                         <button type="submit" class="btn btn-primary">Отправить</button>
                     </form>
                 {% else %}
                     <p class="text-muted"><a href="{% url 'login' %}">Войдите</a>, чтобы оставить комментарий</p>
                 {% endif %}
-                
+
                 {% for comment in event.comments.all %}
                     <div class="border-bottom mb-3 pb-3" id="comment-{{ comment.id }}">
                         <div class="d-flex justify-content-between">
@@ -125,70 +252,15 @@
                         </div>
                         <p class="mb-1">{{ comment.text|linebreaks }}</p>
                         {% if user.is_authenticated and user == comment.user or user.is_superuser %}
-                            <a href="{% url 'delete_comment' comment.id %}" class="text-danger small" onclick="return confirm('Удалить комментарий?')">Удалить</a>
+                            <a href="{% url 'delete_comment' comment.id %}"
+                               class="text-danger small"
+                               onclick="return confirm('Удалить комментарий?')">
+                                Удалить
+                            </a>
                         {% endif %}
                     </div>
                 {% empty %}
                     <p class="text-muted">Пока нет комментариев. Будьте первым!</p>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ОТЗЫВЫ -->
-<div class="row mt-4">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header bg-warning">
-                <h5 class="mb-0">⭐ Отзывы ({{ event.reviews.count }})</h5>
-            </div>
-            <div class="card-body">
-                {% if user.is_authenticated %}
-                    {% if user_registered_attended %}
-                        <form method="post" action="{% url 'add_review' event.id %}" class="mb-4 border p-3 rounded">
-                            <h6>Оставить отзыв</h6>
-                            {% csrf_token %}
-                            <div class="mb-2">
-                                <label class="form-label">Оценка:</label>
-                                <select name="rating" class="form-select w-auto d-inline-block ms-2">
-                                    <option value="5">5 ★</option>
-                                    <option value="4">4 ★</option>
-                                    <option value="3">3 ★</option>
-                                    <option value="2">2 ★</option>
-                                    <option value="1">1 ★</option>
-                                </select>
-                            </div>
-                            <textarea name="text" class="form-control mb-2" rows="2" placeholder="Ваш отзыв..."></textarea>
-                            <button type="submit" class="btn btn-warning">Отправить отзыв</button>
-                        </form>
-                    {% elif user_registered %}
-                        <p class="text-muted">Вы можете оставить отзыв после посещения мероприятия</p>
-                    {% endif %}
-                {% else %}
-                    <p class="text-muted"><a href="{% url 'login' %}">Войдите</a>, чтобы оставить отзыв</p>
-                {% endif %}
-                
-                {% for review in event.reviews.all %}
-                    <div class="border-bottom mb-3 pb-3">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <strong>{{ review.user.username }}</strong>
-                                <span class="text-warning ms-2">
-                                    {% for i in "12345"|make_list %}
-                                        {% if forloop.counter <= review.rating %}★{% else %}☆{% endif %}
-                                    {% endfor %}
-                                </span>
-                            </div>
-                            <small class="text-muted">{{ review.created_at|date:"d.m.Y H:i" }}</small>
-                        </div>
-                        <p class="mb-1">{{ review.text|default:"<em>Без комментария</em>" }}</p>
-                        {% if user.is_authenticated and user == review.user or user.is_superuser %}
-                            <a href="{% url 'delete_review' review.id %}" class="text-danger small" onclick="return confirm('Удалить отзыв?')">Удалить</a>
-                        {% endif %}
-                    </div>
-                {% empty %}
-                    <p class="text-muted">Пока нет отзывов. Будьте первым!</p>
                 {% endfor %}
             </div>
         </div>
@@ -211,27 +283,21 @@
     </div>
 </div>
 
-<!-- Leaflet CSS и JS -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<!-- Leaflet Control Geocoder (для поиска адреса) -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
 <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
 <script>
-    // Инициализация карты
     var map = L.map('map').setView([55.751574, 37.573856], 10);
-    
-    // Добавляем слой OpenStreetMap
+
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
-    
-    // Адрес мероприятия
+
     var address = "{{ event.location }}";
-    
-    // Геокодирование (поиск координат по адресу)
+
     if (address) {
         fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`)
             .then(response => response.json())
@@ -239,16 +305,13 @@
                 if (data && data.length > 0) {
                     var lat = data[0].lat;
                     var lon = data[0].lon;
-                    
-                    // Устанавливаем центр карты
+
                     map.setView([lat, lon], 15);
-                    
-                    // Добавляем маркер
-                    var marker = L.marker([lat, lon]).addTo(map)
+
+                    L.marker([lat, lon]).addTo(map)
                         .bindPopup(`<strong>{{ event.title }}</strong><br>${address}`)
                         .openPopup();
                 } else {
-                    // Если адрес не найден, показываем сообщение
                     map.setView([55.751574, 37.573856], 10);
                     L.popup()
                         .setLatLng([55.751574, 37.573856])
@@ -264,12 +327,11 @@
 {% endif %}
 
 <script>
-    // AJAX для лайков
     document.getElementById('like-button')?.addEventListener('click', function() {
         const eventId = this.dataset.eventId;
         const likesSpan = document.getElementById('likes-count');
         const icon = this.querySelector('i');
-        
+
         fetch(`/events/like/${eventId}/`, {
             method: 'POST',
             headers: {
@@ -289,13 +351,12 @@
             }
         });
     });
-    
-    // AJAX для избранного
+
     document.getElementById('favorite-button')?.addEventListener('click', function() {
         const eventId = this.dataset.eventId;
         const favoritesSpan = document.getElementById('favorites-count');
         const icon = this.querySelector('i');
-        
+
         fetch(`/events/favorite/${eventId}/`, {
             method: 'POST',
             headers: {

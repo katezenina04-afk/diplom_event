@@ -3,94 +3,125 @@
 {% block title %}Статистика: {{ event.title }}{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-8">
-        <h1>Статистика мероприятия</h1>
-        <h3>{{ event.title }}</h3>
+<section class="mb-4">
+    <div class="statistics-hero rounded-4 p-4 p-lg-5 text-white">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <span class="badge bg-light text-dark mb-3 px-3 py-2">Аналитика мероприятия</span>
+                <h1 class="display-6 fw-bold mb-3">{{ event.title }}</h1>
+                <p class="lead mb-0">
+                    На странице отображаются показатели активности пользователей и список зарегистрированных участников.
+                </p>
+            </div>
+            <div class="col-lg-4 mt-4 mt-lg-0 text-lg-end">
+                <a href="{% url 'event_detail' event.id %}" class="btn btn-light btn-lg px-4">← Назад к мероприятию</a>
+            </div>
+        </div>
     </div>
+</section>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-6 col-xl-3">
+        <div class="stat-box shadow-sm rounded-4 p-4 h-100">
+            <div class="small text-muted mb-2">Просмотры</div>
+            <div class="display-6 fw-bold">{{ stats.views }}</div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3">
+        <div class="stat-box shadow-sm rounded-4 p-4 h-100">
+            <div class="small text-muted mb-2">Всего записей</div>
+            <div class="display-6 fw-bold">{{ stats.registrations }}</div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3">
+        <div class="stat-box shadow-sm rounded-4 p-4 h-100">
+            <div class="small text-muted mb-2">Подтверждено</div>
+            <div class="display-6 fw-bold">{{ stats.confirmed_registrations }}</div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3">
+        <div class="stat-box shadow-sm rounded-4 p-4 h-100">
+            <div class="small text-muted mb-2">Посетило</div>
+            <div class="display-6 fw-bold">{{ stats.attended }}</div>
+        </div>
+    </div>
+
     <div class="col-md-4">
-        <a href="{% url 'event_detail' event.id %}" class="btn btn-secondary">← Назад</a>
+        <div class="stat-box shadow-sm rounded-4 p-4 h-100">
+            <div class="small text-muted mb-2">Лайки</div>
+            <div class="display-6 fw-bold">{{ stats.likes }}</div>
+        </div>
     </div>
-</div>
 
-<div class="row mt-4">
-    <div class="col-md-4 mb-3">
-        <div class="card text-white bg-primary">
-            <div class="card-body text-center">
-                <h5 class="card-title">👁️ Просмотры</h5>
-                <p class="display-4">{{ stats.views }}</p>
-            </div>
+    <div class="col-md-4">
+        <div class="stat-box shadow-sm rounded-4 p-4 h-100">
+            <div class="small text-muted mb-2">В избранном</div>
+            <div class="display-6 fw-bold">{{ stats.favorites }}</div>
         </div>
     </div>
-    <div class="col-md-4 mb-3">
-        <div class="card text-white bg-success">
-            <div class="card-body text-center">
-                <h5 class="card-title">📝 Записей</h5>
-                <p class="display-4">{{ stats.registrations }}</p>
-                <small>Подтверждено: {{ stats.confirmed_registrations }} | Посетило: {{ stats.attended }}</small>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4 mb-3">
-        <div class="card text-white bg-danger">
-            <div class="card-body text-center">
-                <h5 class="card-title">❤️ Лайков</h5>
-                <p class="display-4">{{ stats.likes }}</p>
-            </div>
+
+    <div class="col-md-4">
+        <div class="stat-box shadow-sm rounded-4 p-4 h-100">
+            <div class="small text-muted mb-2">Комментарии</div>
+            <div class="display-6 fw-bold">{{ stats.comments }}</div>
         </div>
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-4 mb-3">
-        <div class="card text-white bg-warning">
-            <div class="card-body text-center">
-                <h5 class="card-title">⭐ В избранном</h5>
-                <p class="display-4">{{ stats.favorites }}</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4 mb-3">
-        <div class="card text-white bg-info">
-            <div class="card-body text-center">
-                <h5 class="card-title">💬 Комментариев</h5>
-                <p class="display-4">{{ stats.comments }}</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4 mb-3">
-        <div class="card text-white bg-secondary">
-            <div class="card-body text-center">
-                <h5 class="card-title">⭐ Отзывы</h5>
-                <p class="display-4">{{ stats.reviews }}</p>
-                <small>Средний рейтинг: {{ stats.average_rating|floatformat:1 }} ★</small>
-            </div>
+<div class="card shadow-sm border-0 rounded-4">
+    <div class="card-body p-4">
+        <h2 class="h5 fw-bold mb-3">Список участников</h2>
+
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Участник</th>
+                        <th>Дата регистрации</th>
+                        <th>Статус</th>
+                        <th>Код для входа</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reg in event.registrations.all %}
+                        <tr>
+                            <td>{{ reg.user.username }}</td>
+                            <td>{{ reg.created_at|date:"d.m.Y H:i" }}</td>
+                            <td>
+                                {% if reg.status == 'confirmed' %}
+                                    <span class="badge bg-success">Подтверждено</span>
+                                {% elif reg.status == 'pending' %}
+                                    <span class="badge bg-warning text-dark">Ожидание</span>
+                                {% elif reg.status == 'attended' %}
+                                    <span class="badge bg-primary">Посетил</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ reg.get_status_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td><code>{{ reg.entry_code }}</code></td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-muted">Нет участников</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
 
-<div class="mt-4">
-    <h4>Список участников</h4>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Участник</th>
-                <th>Дата регистрации</th>
-                <th>Статус</th>
-                <th>Код для входа</th>
-            </thead>
-        <tbody>
-            {% for reg in event.registrations.all %}
-            <tr>
-                <td>{{ reg.user.username }}</td>
-                <td>{{ reg.created_at|date:"d.m.Y H:i" }}</td>
-                <td>{{ reg.get_status_display }}</td>
-                <td><code>{{ reg.entry_code }}</code></td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="4">Нет участников</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+<style>
+    .statistics-hero {
+        background: linear-gradient(135deg, #0f766e, #2563eb);
+    }
+
+    .stat-box {
+        background: #ffffff;
+        border: 1px solid rgba(0,0,0,0.06);
+    }
+</style>
 {% endblock %}

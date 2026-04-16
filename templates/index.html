@@ -3,66 +3,282 @@
 {% block title %}Главная{% endblock %}
 
 {% block content %}
-<div class="jumbotron bg-light p-5 rounded-3 mb-4">
-    <h1 class="display-4">Добро пожаловать в Афишу мероприятий!</h1>
-    <p class="lead">Платформа для поиска и организации мероприятий</p>
-    <hr class="my-4">
-    <p>Создавайте свои мероприятия, находите интересные события, записывайтесь и участвуйте!</p>
-    {% if not user.is_authenticated %}
-        <a href="{% url 'register' %}" class="btn btn-primary btn-lg">Присоединиться</a>
-        <a href="{% url 'login' %}" class="btn btn-outline-primary btn-lg">Войти</a>
-    {% endif %}
-</div>
+<section class="hero-section rounded-4 p-5 mb-5 text-white">
+    <div class="row align-items-center">
+        <div class="col-lg-7">
+            <span class="badge bg-light text-dark mb-3 px-3 py-2">Платформа для организации и поиска мероприятий</span>
+            <h1 class="display-5 fw-bold mb-3">Находите интересные события и создавайте свои мероприятия</h1>
+            <p class="lead mb-4">
+                Следите за афишей, подписывайтесь на организаторов, получайте рекомендации и управляйте мероприятиями в одной системе.
+            </p>
 
-<div class="row">
-    <!-- Блок 1: Создавайте мероприятия -->
-    <div class="col-md-4 mb-4">
-        <a href="{% url 'create_event' %}" class="text-decoration-none">
-            <div class="card h-100 shadow-sm transition-hover">
-                <div class="card-body text-center">
-                    <i class="bi bi-calendar-event" style="font-size: 3rem;"></i>
-                    <h5 class="mt-3">Создавайте мероприятия</h5>
-                    <p class="text-muted">Легко создавайте и публикуйте свои мероприятия</p>
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{% url 'event_list' %}" class="btn btn-light btn-lg px-4">Смотреть афишу</a>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'create_event' %}" class="btn btn-outline-light btn-lg px-4">Создать мероприятие</a>
+                {% else %}
+                    <a href="{% url 'register' %}" class="btn btn-outline-light btn-lg px-4">Присоединиться</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-lg-5 mt-4 mt-lg-0">
+            <div class="hero-card p-4 rounded-4 bg-white text-dark shadow">
+                <h5 class="fw-bold mb-3">Почему это удобно</h5>
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Афиша, календарь и карта в одной системе</li>
+                    <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Подписка на организаторов и уведомления</li>
+                    <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Рекомендации на основе интересов пользователя</li>
+                    <li class="mb-0"><i class="bi bi-check-circle-fill text-success me-2"></i>Создание и управление мероприятиями для организаторов</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="mb-5">
+    <div class="row g-3">
+        <div class="col-md-4">
+            <div class="stat-card rounded-4 p-4 shadow-sm h-100">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="stat-icon"><i class="bi bi-calendar-event"></i></div>
+                    <div>
+                        <div class="text-muted small">Опубликованные мероприятия</div>
+                        <div class="fs-3 fw-bold">{{ stats.events_count }}</div>
+                    </div>
                 </div>
             </div>
-        </a>
-    </div>
+        </div>
 
-    <!-- Блок 2: Находите события -->
-    <div class="col-md-4 mb-4">
-        <a href="{% url 'event_list' %}" class="text-decoration-none">
-            <div class="card h-100 shadow-sm transition-hover">
-                <div class="card-body text-center">
-                    <i class="bi bi-search" style="font-size: 3rem;"></i>
-                    <h5 class="mt-3">Находите события</h5>
-                    <p class="text-muted">Ищите интересные мероприятия по категориям</p>
+        <div class="col-md-4">
+            <div class="stat-card rounded-4 p-4 shadow-sm h-100">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="stat-icon"><i class="bi bi-grid"></i></div>
+                    <div>
+                        <div class="text-muted small">Категории</div>
+                        <div class="fs-3 fw-bold">{{ stats.categories_count }}</div>
+                    </div>
                 </div>
             </div>
-        </a>
-    </div>
+        </div>
 
-    <!-- Блок 3: Записывайтесь (ведёт на страницу доступных мероприятий) -->
-    <div class="col-md-4 mb-4">
-        <a href="{% url 'event_list' %}" class="text-decoration-none">
-            <div class="card h-100 shadow-sm transition-hover">
-                <div class="card-body text-center">
-                    <i class="bi bi-ticket" style="font-size: 3rem;"></i>
-                    <h5 class="mt-3">Записывайтесь</h5>
-                    <p class="text-muted">Быстрая запись на любые мероприятия</p>
+        <div class="col-md-4">
+            <div class="stat-card rounded-4 p-4 shadow-sm h-100">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="stat-icon"><i class="bi bi-people"></i></div>
+                    <div>
+                        <div class="text-muted small">Организаторы</div>
+                        <div class="fs-3 fw-bold">{{ stats.organizers_count }}</div>
+                    </div>
                 </div>
             </div>
-        </a>
+        </div>
     </div>
-</div>
+</section>
+
+{% if categories %}
+<section class="mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="h4 fw-bold mb-0">Категории</h2>
+        <a href="{% url 'event_list' %}" class="text-decoration-none">Все мероприятия</a>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2">
+        {% for category in categories %}
+            <a href="{% url 'event_list' %}?category={{ category.id }}" class="btn btn-outline-secondary rounded-pill px-3">
+                {% if category.icon %}<i class="{{ category.icon }} me-1"></i>{% endif %}
+                {{ category.name }}
+            </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+{% if upcoming_events %}
+<section class="mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="h4 fw-bold mb-0">Ближайшие мероприятия</h2>
+        <a href="{% url 'event_list' %}" class="text-decoration-none">Смотреть все</a>
+    </div>
+
+    <div class="row g-4">
+        {% for event in upcoming_events %}
+            <div class="col-md-6 col-xl-4">
+                <div class="card event-card h-100 shadow-sm border-0 rounded-4">
+                    {% if event.image %}
+                        <img src="{{ event.image.url }}" class="card-img-top rounded-top-4 event-cover" alt="{{ event.title }}">
+                    {% else %}
+                        <div class="event-cover-placeholder rounded-top-4 d-flex align-items-center justify-content-center">
+                            <i class="bi bi-image fs-1 text-secondary"></i>
+                        </div>
+                    {% endif %}
+
+                    <div class="card-body d-flex flex-column">
+                        {% if event.category %}
+                            <span class="badge bg-light text-dark mb-2 align-self-start">{{ event.category.name }}</span>
+                        {% endif %}
+
+                        <h5 class="card-title fw-bold">{{ event.title }}</h5>
+
+                        <p class="card-text text-muted small mb-2">
+                            <i class="bi bi-calendar3 me-1"></i>{{ event.start_datetime|date:"d.m.Y H:i" }}
+                        </p>
+
+                        <p class="card-text text-muted small mb-2">
+                            <i class="bi bi-geo-alt me-1"></i>{{ event.location|truncatechars:60 }}
+                        </p>
+
+                        <p class="card-text text-muted small mb-3">
+                            <i class="bi bi-person me-1"></i>{{ event.creator.username }}
+                        </p>
+
+                        <div class="mt-auto d-flex justify-content-between align-items-center">
+                            <span class="fw-semibold">
+                                {% if event.is_free %}
+                                    Бесплатно
+                                {% else %}
+                                    {{ event.price }} ₽
+                                {% endif %}
+                            </span>
+                            <a href="{% url 'event_detail' event.id %}" class="btn btn-primary btn-sm">Подробнее</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+{% if popular_events %}
+<section class="mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="h4 fw-bold mb-0">Популярные сейчас</h2>
+        <a href="{% url 'event_list' %}?sort=popular" class="text-decoration-none">По популярности</a>
+    </div>
+
+    <div class="row g-4">
+        {% for event in popular_events %}
+            <div class="col-md-6 col-xl-4">
+                <div class="card event-card h-100 shadow-sm border-0 rounded-4">
+                    {% if event.image %}
+                        <img src="{{ event.image.url }}" class="card-img-top rounded-top-4 event-cover" alt="{{ event.title }}">
+                    {% else %}
+                        <div class="event-cover-placeholder rounded-top-4 d-flex align-items-center justify-content-center">
+                            <i class="bi bi-star fs-1 text-secondary"></i>
+                        </div>
+                    {% endif %}
+
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            {% if event.category %}
+                                <span class="badge bg-warning text-dark">{{ event.category.name }}</span>
+                            {% endif %}
+                            <span class="small text-muted">
+                                <i class="bi bi-people me-1"></i>{{ event.participants_total }}
+                            </span>
+                        </div>
+
+                        <h5 class="card-title fw-bold">{{ event.title }}</h5>
+
+                        <p class="card-text text-muted small mb-2">
+                            <i class="bi bi-calendar3 me-1"></i>{{ event.start_datetime|date:"d.m.Y H:i" }}
+                        </p>
+
+                        <p class="card-text text-muted small mb-3">
+                            <i class="bi bi-geo-alt me-1"></i>{{ event.location|truncatechars:60 }}
+                        </p>
+
+                        <div class="mt-auto d-flex justify-content-between align-items-center">
+                            <span class="fw-semibold">
+                                {% if event.is_free %}
+                                    Бесплатно
+                                {% else %}
+                                    {{ event.price }} ₽
+                                {% endif %}
+                            </span>
+                            <a href="{% url 'event_detail' event.id %}" class="btn btn-outline-primary btn-sm">Подробнее</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<section class="mb-5">
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="feature-card h-100 p-4 rounded-4 shadow-sm">
+                <div class="feature-icon mb-3"><i class="bi bi-person-plus"></i></div>
+                <h5 class="fw-bold">Подписка на организаторов</h5>
+                <p class="text-muted mb-0">Следите за любимыми организаторами и получайте уведомления о новых мероприятиях.</p>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="feature-card h-100 p-4 rounded-4 shadow-sm">
+                <div class="feature-icon mb-3"><i class="bi bi-stars"></i></div>
+                <h5 class="fw-bold">Персональные рекомендации</h5>
+                <p class="text-muted mb-0">Система подбирает события на основе интересов, лайков, избранного и прошлой активности.</p>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="feature-card h-100 p-4 rounded-4 shadow-sm">
+                <div class="feature-icon mb-3"><i class="bi bi-bar-chart-line"></i></div>
+                <h5 class="fw-bold">Инструменты для организаторов</h5>
+                <p class="text-muted mb-0">Создание мероприятий, поиск специалистов, аналитика и управление участниками в одном месте.</p>
+            </div>
+        </div>
+    </div>
+</section>
 
 <style>
-    .transition-hover {
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        cursor: pointer;
+    .hero-section {
+        background: linear-gradient(135deg, #4f46e5, #7c3aed);
     }
-    .transition-hover:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+
+    .hero-card {
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .stat-card,
+    .feature-card {
+        background: #fff;
+        border: 1px solid rgba(0,0,0,0.06);
+    }
+
+    .stat-icon,
+    .feature-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #f3f4f6;
+        font-size: 1.4rem;
+    }
+
+    .event-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .event-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 .75rem 1.5rem rgba(0,0,0,.08) !important;
+    }
+
+    .event-cover {
+        height: 220px;
+        object-fit: cover;
+    }
+
+    .event-cover-placeholder {
+        height: 220px;
+        background: #f1f3f5;
     }
 </style>
 {% endblock %}

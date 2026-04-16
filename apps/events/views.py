@@ -8,7 +8,7 @@ from django.db.models import Q, Count
 from django.db import models
 import calendar
 import secrets
-from .models import Event, Category, Registration, Comment, Like, Review, Favorite, Notification
+from .models import Event, Category, Registration, Comment, Like, Review, Favorite, Notification, OrganizerSubscription
 from .forms import EventForm, CommentForm, ReviewForm
 from django.http import JsonResponse
 from accounts.models import User
@@ -93,17 +93,18 @@ def event_detail(request, pk):
     user_favorited = False
     user_registered = False
     user_registered_attended = False
+    has_pending_invitation = False
+    is_subscribed_to_organizer = False
+
     event.views_count += 1
     event.save(update_fields=['views_count'])
-    
-    # <<<<< ДОБАВЛЕНО: проверка, прошло ли мероприятие
+
     is_past = False
     if event.end_datetime:
         is_past = event.end_datetime < timezone.now()
     else:
         is_past = event.start_datetime < timezone.now()
-    # >>>>> КОНЕЦ ДОБАВЛЕНИЯ
-    
+
     if request.user.is_authenticated:
         registration = Registration.objects.filter(event=event, user=request.user).first()
         is_registered = registration is not None
@@ -111,7 +112,24 @@ def event_detail(request, pk):
         user_registered_attended = registration is not None and registration.status == 'attended'
         user_liked = Like.objects.filter(event=event, user=request.user).exists()
         user_favorited = Favorite.objects.filter(event=event, user=request.user).exists()
-    
+        has_pending_invitation = registration is not None and registration.status == 'pending' and registration.is_invited
+
+        if request.user != event.creator:
+            is_subscribed_to_organizer = OrganizerSubscription.objects.filter(
+                user=request.user,
+                organizer=event.creator
+            ).exists()
+
+    organizer_other_events = Event.objects.filter(
+        creator=event.creator,
+        status='published'
+    ).exclude(pk=event.pk).order_by('start_datetime')[:4]
+
+    same_location_events = Event.objects.filter(
+        status='published',
+        location=event.location
+    ).exclude(pk=event.pk).order_by('start_datetime')[:4]
+
     context = {
         'event': event,
         'is_registered': is_registered,
@@ -120,10 +138,13 @@ def event_detail(request, pk):
         'user_favorited': user_favorited,
         'user_registered': user_registered,
         'user_registered_attended': user_registered_attended,
-        'is_past': is_past,  # <<<<< ДОБАВЛЕНО
+        'has_pending_invitation': has_pending_invitation,
+        'is_past': is_past,
+        'is_subscribed_to_organizer': is_subscribed_to_organizer,
+        'organizer_other_events': organizer_other_events,
+        'same_location_events': same_location_events,
     }
     return render(request, 'events/detail.html', context)
-
 
 def event_calendar(request, year=None, month=None):
     if not year:
@@ -483,6 +504,48 @@ def favorites_list(request):
     favorites = Favorite.objects.filter(user=request.user).select_related('event')
     return render(request, 'events/favorites.html', {'favorites': favorites})
 
+@login_required
+def toggle_organizer_subscription(request, organizer_id):
+    organizer = get_object_or_404(User, pk=organizer_id)
+
+    if organizer == request.user:
+        messages.warning(request, 'Нельзя подписаться на самого себя')
+        return redirect(request.META.get('HTTP_REFERER', 'event_list'))
+
+    subscription, created = OrganizerSubscription.objects.get_or_create(
+        user=request.user,
+        organizer=organizer
+    )
+
+    if not created:
+        subscription.delete()
+        messages.success(request, f'Подписка на организатора {organizer.username} отменена')
+    else:
+        messages.success(request, f'Вы подписались на организатора {organizer.username}')
+
+    return redirect(request.META.get('HTTP_REFERER', 'event_list'))
+
+def organizer_profile(request, organizer_id):
+    organizer = get_object_or_404(User, pk=organizer_id)
+
+    events = Event.objects.filter(
+        creator=organizer,
+        status='published'
+    ).order_by('start_datetime')
+
+    is_subscribed = False
+    if request.user.is_authenticated and request.user != organizer:
+        is_subscribed = OrganizerSubscription.objects.filter(
+            user=request.user,
+            organizer=organizer
+        ).exists()
+
+    context = {
+        'organizer': organizer,
+        'events': events,
+        'is_subscribed': is_subscribed,
+    }
+    return render(request, 'events/organizer_profile.html', context)
 
 def create_notification(user, notification_type, title, message, link=''):
     """Создание уведомления"""
@@ -706,6 +769,19 @@ def moderate_event(request, event_id):
                 message=f'Ваше мероприятие "{event.title}" успешно опубликовано.',
                 link=f'/events/{event.id}/'
             )
+            # Уведомление подписчикам организатора
+            subscriptions = OrganizerSubscription.objects.filter(
+                organizer=event.creator
+            ).select_related('user')
+
+            for sub in subscriptions:
+                create_notification(
+                    user=sub.user,
+                    notification_type='new_event_from_organizer',
+                    title='Новое мероприятие от организатора',
+                    message=f'Организатор {event.creator.username} опубликовал новое мероприятие "{event.title}"',
+                    link=f'/events/{event.id}/'
+                )    
             
             # Отправка email-уведомления организатору
             send_moderation_result_email(event.creator, event, 'approved')

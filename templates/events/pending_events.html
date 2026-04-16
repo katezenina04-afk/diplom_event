@@ -3,40 +3,89 @@
 {% block title %}Заявки на модерацию{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
-            <li class="breadcrumb-item active">Заявки на модерацию</li>
-        </ol>
-    </nav>
+<section class="mb-4">
+    <div class="pending-hero rounded-4 p-4 p-lg-5 text-white">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <span class="badge bg-light text-dark mb-3 px-3 py-2">Администрирование</span>
+                <h1 class="display-6 fw-bold mb-3">Заявки на модерацию</h1>
+                <p class="lead mb-0">
+                    Здесь отображаются мероприятия, ожидающие проверки и решения модератора.
+                </p>
+            </div>
+            <div class="col-lg-4 mt-4 mt-lg-0 text-lg-end">
+                <a href="{% url 'reports_dashboard' %}" class="btn btn-light btn-lg px-4">К отчетам</a>
+            </div>
+        </div>
+    </div>
+</section>
 
-    <h1>📋 Заявки на модерацию</h1>
-    <p class="text-muted">Мероприятия, ожидающие одобрения</p>
-
+<section>
     {% if events %}
-        <div class="row">
+        <div class="row g-4">
             {% for event in events %}
-            <div class="col-md-6 mb-4">
-                <div class="card h-100">
-                    <div class="card-header bg-warning">
-                        <h5 class="mb-0">{{ event.title }}</h5>
-                    </div>
-                    <div class="card-body">
-                        <p><strong>Организатор:</strong> {{ event.creator.username }}</p>
-                        <p><strong>Дата:</strong> {{ event.start_datetime|date:"d.m.Y H:i" }}</p>
-                        <p><strong>Место:</strong> {{ event.location }}</p>
-                        <p><strong>Описание:</strong> {{ event.description|truncatechars:150 }}</p>
-                        <a href="{% url 'moderate_event' event.id %}" class="btn btn-primary">Рассмотреть</a>
+                <div class="col-md-6">
+                    <div class="card pending-card h-100 shadow-sm border-0 rounded-4">
+                        {% if event.image %}
+                            <img src="{{ event.image.url }}" class="card-img-top rounded-top-4 pending-cover" alt="{{ event.title }}">
+                        {% endif %}
+
+                        <div class="card-body d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                <h5 class="fw-bold mb-0">{{ event.title }}</h5>
+                                <span class="badge bg-warning text-dark">На модерации</span>
+                            </div>
+
+                            <p class="text-muted small mb-2">
+                                <i class="bi bi-person me-1"></i>{{ event.creator.username }}
+                            </p>
+
+                            <p class="text-muted small mb-2">
+                                <i class="bi bi-calendar3 me-1"></i>{{ event.start_datetime|date:"d.m.Y H:i" }}
+                            </p>
+
+                            <p class="text-muted small mb-3">
+                                <i class="bi bi-geo-alt me-1"></i>{{ event.location }}
+                            </p>
+
+                            <p class="mb-3">{{ event.description|truncatechars:150 }}</p>
+
+                            <div class="mt-auto">
+                                <a href="{% url 'moderate_event' event.id %}" class="btn btn-primary">Рассмотреть</a>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
             {% endfor %}
         </div>
     {% else %}
-        <div class="alert alert-info">
-            <i class="bi bi-check-circle"></i> Нет заявок на модерацию
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-check-circle fs-1 text-success mb-3"></i>
+                <h3 class="h5 fw-bold">Нет заявок на модерацию</h3>
+                <p class="text-muted mb-0">Сейчас все мероприятия уже обработаны.</p>
+            </div>
         </div>
     {% endif %}
-</div>
+</section>
+
+<style>
+    .pending-hero {
+        background: linear-gradient(135deg, #f59e0b, #ef4444);
+    }
+
+    .pending-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .pending-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 .75rem 1.5rem rgba(0,0,0,.08) !important;
+    }
+
+    .pending-cover {
+        height: 220px;
+        object-fit: cover;
+    }
+</style>
 {% endblock %}

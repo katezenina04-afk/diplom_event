@@ -7,49 +7,129 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
+        :root {
+            --bg-main: #f8fafc;
+            --card-border: rgba(0, 0, 0, 0.06);
+            --text-muted-soft: #6b7280;
+            --brand-primary: #4f46e5;
+        }
+
         html, body {
             height: 100%;
             margin: 0;
             padding: 0;
+            background: var(--bg-main);
         }
+
         body {
             display: flex;
             flex-direction: column;
             min-height: 100vh;
+            color: #111827;
         }
+
         main {
             flex: 1;
         }
+
         footer {
             margin-top: auto;
         }
+
         .dropdown-menu {
-            min-width: 220px;
+            min-width: 240px;
+            border-radius: 14px;
+            border: 1px solid rgba(0,0,0,0.08);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
         }
+
         .dropdown-header {
             font-size: 0.75rem;
             color: #6c757d;
             padding: 0.5rem 1rem;
         }
+
+        .navbar-modern {
+            background: rgba(17, 24, 39, 0.92);
+            backdrop-filter: blur(10px);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+
+        .nav-link {
+            font-weight: 500;
+        }
+
+        .page-shell {
+            padding-top: 1.5rem;
+            padding-bottom: 2rem;
+        }
+
+        .alert {
+            border-radius: 14px;
+            border: none;
+        }
+
+        .card {
+            border: 1px solid var(--card-border);
+            border-radius: 18px;
+        }
+
+        .card-header {
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            border-top-left-radius: 18px !important;
+            border-top-right-radius: 18px !important;
+        }
+
+        .btn {
+            border-radius: 12px;
+        }
+
+        .btn-primary {
+            background: var(--brand-primary);
+            border-color: var(--brand-primary);
+        }
+
+        .btn-primary:hover {
+            background: #4338ca;
+            border-color: #4338ca;
+        }
+
+        .footer-modern {
+            background: #111827;
+        }
+
+        .footer-link {
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+        }
+
+        .footer-link:hover {
+            color: #fff;
+        }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-modern sticky-top shadow-sm">
         <div class="container">
             <a class="navbar-brand" href="/">Афиша мероприятий</a>
+
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
+
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item"><a class="nav-link" href="{% url 'event_list' %}">Афиша</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'event_calendar' %}">Календарь</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'events_map' %}">Карта</a></li>
                 </ul>
-                
+
                 <ul class="navbar-nav ms-auto">
                     {% if user.is_authenticated %}
-                        <!-- Уведомления -->
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'notifications_list' %}">
                                 <i class="bi bi-bell"></i> Уведомления
@@ -58,27 +138,25 @@
                                 {% endif %}
                             </a>
                         </li>
-                        
-                        <!-- Выпадающее меню профиля -->
+
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="bi bi-person-circle"></i> {{ user.username }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                                <!-- Профиль -->
                                 <li><a class="dropdown-item" href="{% url 'profile' %}">
                                     <i class="bi bi-person"></i> Профиль
                                 </a></li>
-                                
+
                                 <li><hr class="dropdown-divider"></li>
-                                
-                                <!-- Раздел: Управление мероприятиями -->
+
                                 <li><h6 class="dropdown-header">📋 Управление мероприятиями</h6></li>
                                 <li><a class="dropdown-item" href="{% url 'my_events' %}">
                                     <i class="bi bi-calendar-plus"></i> Мои мероприятия
                                 </a></li>
+
                                 <li><hr class="dropdown-divider"></li>
-                                <!-- Раздел: Участие -->
+
                                 <li><h6 class="dropdown-header">🎫 Участие</h6></li>
                                 <li><a class="dropdown-item" href="{% url 'my_registrations' %}">
                                     <i class="bi bi-ticket-perforated"></i> Мои записи
@@ -86,15 +164,15 @@
                                 <li><a class="dropdown-item" href="{% url 'favorites_list' %}">
                                     <i class="bi bi-star"></i> Избранное
                                 </a></li>
+
                                 <li><hr class="dropdown-divider"></li>
-                                <!-- Раздел: Аналитика -->
+
                                 <li><h6 class="dropdown-header">🤖 Аналитика</h6></li>
                                 <li><a class="dropdown-item" href="{% url 'recommendations' %}">
                                     <i class="bi bi-cpu"></i> Рекомендации
                                 </a></li>
-                                
+
                                 {% if user.is_superuser %}
-                                    <!-- Раздел: Администрирование -->
                                     <li><hr class="dropdown-divider"></li>
                                     <li><h6 class="dropdown-header text-warning">⚙️ Администрирование</h6></li>
                                     <li><a class="dropdown-item" href="{% url 'pending_events' %}">
@@ -110,7 +188,7 @@
                                         <i class="bi bi-gear"></i> Админка
                                     </a></li>
                                 {% endif %}
-                                
+
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <form method="post" action="{% url 'logout' %}" style="display: inline;">
@@ -131,10 +209,10 @@
         </div>
     </nav>
 
-    <main class="container mt-4">
+    <main class="container page-shell">
         {% if messages %}
             {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm">
                     {{ message }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
@@ -143,38 +221,36 @@
         {% block content %}{% endblock %}
     </main>
 
-    <!-- Подвал -->
-    <footer class="bg-dark text-white py-4">
+    <footer class="footer-modern text-white py-5">
         <div class="container">
             <div class="row">
-                <div class="col-md-4 mb-3">
-                    <h5>Афиша мероприятий</h5>
-                    <p class="small">Платформа для поиска и организации мероприятий. Создавайте события, находите интересные встречи, записывайтесь и участвуйте!</p>
+                <div class="col-md-4 mb-4">
+                    <h5 class="fw-bold">Афиша мероприятий</h5>
+                    <p class="small text-white-50 mb-0">
+                        Платформа для поиска и организации мероприятий. Пользователи могут находить события, подписываться на организаторов и получать персональные рекомендации.
+                    </p>
                 </div>
-                <div class="col-md-4 mb-3">
-                    <h5>Быстрые ссылки</h5>
+
+                <div class="col-md-4 mb-4">
+                    <h5 class="fw-bold">Разделы</h5>
                     <ul class="list-unstyled">
-                        <li><a href="{% url 'event_list' %}" class="text-white-50 text-decoration-none">Афиша</a></li>
-                        <li><a href="{% url 'event_calendar' %}" class="text-white-50 text-decoration-none">Календарь</a></li>
-                        <li><a href="{% url 'events_map' %}" class="text-white-50 text-decoration-none">Карта</a></li>
+                        <li><a href="{% url 'event_list' %}" class="footer-link">Афиша</a></li>
+                        <li><a href="{% url 'event_calendar' %}" class="footer-link">Календарь</a></li>
+                        <li><a href="{% url 'events_map' %}" class="footer-link">Карта мероприятий</a></li>
                     </ul>
                 </div>
-                <div class="col-md-4 mb-3">
-                    <h5>Контакты</h5>
-                    <ul class="list-unstyled">
-                        <li><i class="bi bi-envelope me-2"></i> support@eventplanner.ru</li>
-                        <li><i class="bi bi-telephone me-2"></i> +7 (999) 123-45-67</li>
-                        <li><i class="bi bi-github me-2"></i> <a href="#" class="text-white-50 text-decoration-none">GitHub</a></li>
-                    </ul>
-                    <div class="mt-2">
-                        <a href="#" class="text-white-50 me-3"><i class="bi bi-telegram"></i></a>
-                        <a href="#" class="text-white-50 me-3"><i class="bi bi-vk"></i></a>
-                        <a href="#" class="text-white-50"><i class="bi bi-youtube"></i></a>
-                    </div>
+
+                <div class="col-md-4 mb-4">
+                    <h5 class="fw-bold">О проекте</h5>
+                    <p class="small text-white-50">
+                        Система объединяет инструменты для участников и организаторов: публикацию мероприятий, регистрацию, подписки, аналитику и рекомендации.
+                    </p>
                 </div>
             </div>
-            <hr class="bg-secondary">
-            <div class="text-center small">
+
+            <hr class="border-secondary">
+
+            <div class="text-center small text-white-50">
                 &copy; 2026 Афиша мероприятий. Все права защищены.
             </div>
         </div>
