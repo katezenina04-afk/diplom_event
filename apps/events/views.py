@@ -7,6 +7,7 @@ from django.core.paginator import Paginator
 from django.db.models import Q, Count
 from django.db import models
 import calendar
+import secrets
 from .models import Event, Category, Registration, Comment, Like, Review, Favorite, Notification
 from .forms import EventForm, CommentForm, ReviewForm
 from django.http import JsonResponse
@@ -342,44 +343,16 @@ def cancel_registration(request, pk):
     )
     return redirect('my_registrations')
 
-
 @login_required
 def recommendations(request):
-    """ML-рекомендации для специалиста"""
-    
-    registered_events = Registration.objects.filter(user=request.user).values_list('event_id', flat=True)
-    
-    # Проверяем, заполнен ли профиль
-    has_profile_data = bool(request.user.skills or request.user.experience or request.user.specialization.exists())
-    
-    if not has_profile_data or request.user.role == 'admin':
-        # Обычные рекомендации (просто последние мероприятия)
-        recommended_events = Event.objects.filter(
-            status='published',
-            start_datetime__gt=timezone.now()
-        ).exclude(id__in=registered_events).order_by('start_datetime')[:10]
-        
-        # Преобразуем в формат, совместимый с шаблоном
-        recommendations = []
-        for event in recommended_events:
-            recommendations.append({
-                'event': event,
-                'score': 0,
-                'percent_score': 0,
-                'reasons': []
-            })
-        is_ml = False
-    else:
-        # ML-рекомендации
-        recommendations = generate_recommendations(request.user, limit=10)
-        is_ml = True
-    
+    """Рекомендации для пользователя на основе его активности"""
+    recommendations = generate_recommendations(request.user, limit=10)
+
     context = {
         'recommendations': recommendations,
-        'is_ml': is_ml,
+        'is_ml': True,
     }
     return render(request, 'events/recommendations.html', context)
-
 
 @login_required
 def add_comment(request, event_id):
@@ -558,85 +531,112 @@ def event_statistics(request, pk):
     }
     return render(request, 'events/statistics.html', context)
 
+@login_required
 def search_specialists(request, event_id):
     """Поиск специалистов для приглашения на мероприятие"""
     event = get_object_or_404(Event, pk=event_id, creator=request.user)
-    
-    # Поиск по навыкам и опыту
-    query = request.GET.get('q', '')
-    
+
+    query = request.GET.get('q', '').strip()
+
     specialists = User.objects.filter(
         looking_for_work=True,
-        role='user'  # обычные пользователи, не админы
-    ).exclude(id=request.user.id)  # исключаем себя
-    
+        role='user'
+    ).exclude(id=request.user.id)
+
     if query:
         specialists = specialists.filter(
             Q(skills__icontains=query) |
             Q(experience__icontains=query)
         ).distinct()
-    
-    # Ранжируем по релевантности
-    specialists = specialists.annotate(
-        relevance = (
-            models.Case(
+
+        specialists = specialists.annotate(
+            relevance=models.Case(
                 models.When(skills__icontains=query, then=models.Value(10)),
                 models.When(experience__icontains=query, then=models.Value(5)),
                 default=models.Value(0),
                 output_field=models.IntegerField()
             )
-        )
-    ).order_by('-relevance')
-    
+        ).order_by('-relevance', 'username')
+    else:
+        specialists = specialists.order_by('username')
+
+    # Приглашённые специалисты
+    invited_specialists = Registration.objects.filter(
+        event=event,
+        is_invited=True
+    ).select_related('user').order_by('-created_at')
+
+    # Обычные участники
+    participants = Registration.objects.filter(
+        event=event,
+        is_invited=False
+    ).select_related('user').order_by('-created_at')
+
+    # Кто уже подтверждённо записан
+    registered_user_ids = set(
+        Registration.objects.filter(
+            event=event,
+            status='confirmed'
+        ).values_list('user_id', flat=True)
+    )
+
+    # Кто уже приглашён и ждёт ответа
+    invited_user_ids = set(
+        Registration.objects.filter(
+            event=event,
+            is_invited=True,
+            status='pending'
+        ).values_list('user_id', flat=True)
+    )
+
     context = {
         'event': event,
         'specialists': specialists,
         'query': query,
+        'invited_specialists': invited_specialists,
+        'participants': participants,
+        'registered_user_ids': registered_user_ids,
+        'invited_user_ids': invited_user_ids,
     }
     return render(request, 'events/invite_specialists.html', context)
-
 
 @login_required
 def invite_specialist(request, event_id, specialist_id):
     """Пригласить специалиста на мероприятие"""
     event = get_object_or_404(Event, pk=event_id, creator=request.user)
     specialist = get_object_or_404(User, pk=specialist_id)
-    
-    # ПРОВЕРКА: не записан ли уже специалист на это мероприятие
+
     already_registered = Registration.objects.filter(
-        event=event, 
+        event=event,
         user=specialist,
         status='confirmed'
     ).exists()
-    
+
     if already_registered:
         messages.warning(request, f'{specialist.username} уже записан на это мероприятие')
         return redirect('search_specialists', event_id=event.id)
-    
-    # Проверка, не приглашался ли уже
+
     already_invited = Registration.objects.filter(
         event=event,
         user=specialist,
-        status='pending'
+        status='pending',
+        is_invited=True
     ).exists()
-    
+
     if already_invited:
         messages.warning(request, f'{specialist.username} уже приглашён на это мероприятие')
         return redirect('search_specialists', event_id=event.id)
-    
-    # Создаём приглашение как запись со статусом 'pending'
+
     registration = Registration.objects.create(
         event=event,
         user=specialist,
         status='pending',
         is_invited=True
     )
-    
-    # Генерируем код для входа (потом, когда подтвердит)
+
     registration.entry_code = f"{secrets.randbelow(1000000):06d}"
     registration.save()
-    
-    # Отправляем уведомление специалисту
+
     create_notification(
         user=specialist,
         notification_type='invitation',
@@ -644,11 +644,16 @@ def invite_specialist(request, event_id, specialist_id):
         message=f'{request.user.username} приглашает вас на мероприятие "{event.title}".',
         link=f'/events/accept-invitation/{registration.id}/'
     )
-    
+
     messages.success(request, f'Приглашение отправлено пользователю {specialist.username}')
-    # Отправка email-уведомления специалисту
-    send_invitation_email(specialist, event, message)
-    return redirect('edit_event', pk=event.id)
+
+    # Если функция отправки email принимает только 2 аргумента:
+    send_invitation_email(specialist, event)
+
+    # Если у тебя в email_utils она принимает 3 аргумента, тогда используй так:
+    # send_invitation_email(specialist, event, '')
+
+    return redirect('search_specialists', event_id=event.id)
 
 @login_required
 def accept_invitation(request, registration_id):

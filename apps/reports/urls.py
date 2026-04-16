@@ -8,4 +8,5 @@ urlpatterns = [
     path('participants/', views.participants_report, name='participants_report'),
     path('export/events/', views.export_events_excel, name='export_events_excel'),
     path('export/specialists/', views.export_specialists_excel, name='export_specialists_excel'),
+    path('export/organizers/', views.export_organizers_excel, name='export_organizers_excel'),
 ]

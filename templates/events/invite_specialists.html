@@ -3,53 +3,171 @@
 {% block title %}Поиск специалистов для {{ event.title }}{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-8">
-        <h1>Поиск специалистов</h1>
-        <p>Мероприятие: <strong>{{ event.title }}</strong></p>
-        
-        <form method="get" class="mb-4">
-            <div class="input-group">
-                <input type="text" name="q" class="form-control" placeholder="Поиск по навыкам или опыту..." value="{{ query }}">
-                <button type="submit" class="btn btn-primary">Найти</button>
-            </div>
-        </form>
-        
-        {% if specialists %}
-            <div class="list-group">
-                {% for specialist in specialists %}
-                    <div class="list-group-item">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <h5>{{ specialist.username }}</h5>
-                                <p class="mb-1"><strong>Навыки:</strong> {{ specialist.skills|default:"Не указаны"|truncatechars:100 }}</p>
-                                <p class="mb-1"><strong>Опыт:</strong> {{ specialist.experience|default:"Не указан"|truncatechars:100 }}</p>
-                                {% if specialist.portfolio %}
-                                    <p><a href="{{ specialist.portfolio }}" target="_blank">Портфолио</a></p>
-                                {% endif %}
-                            </div>
+<div class="container mt-4">
+    <h1>Поиск специалистов</h1>
+    <p>Мероприятие: <strong>{{ event.title }}</strong></p>
+
+    <div class="row">
+        <div class="col-md-8">
+            <form method="get" class="mb-4">
+                <div class="input-group">
+                    <input type="text"
+                           name="q"
+                           class="form-control"
+                           placeholder="Поиск по навыкам или опыту..."
+                           value="{{ query }}">
+                    <button type="submit" class="btn btn-primary">Найти</button>
+                </div>
+            </form>
+
+            <!-- Приглашённые специалисты -->
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Приглашённые специалисты</h5>
+                </div>
+                <div class="card-body">
+                    {% if invited_specialists %}
+                        <div class="table-responsive">
+                            <table class="table table-striped mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Специалист</th>
+                                        <th>Email</th>
+                                        <th>Статус</th>
+                                        <th>Дата приглашения</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for reg in invited_specialists %}
+                                    <tr>
+                                        <td>{{ reg.user.username }}</td>
+                                        <td>{{ reg.user.email }}</td>
+                                        <td>
+                                            {% if reg.status == 'pending' %}
+                                                <span class="badge bg-warning text-dark">Ожидает ответа</span>
+                                            {% elif reg.status == 'confirmed' %}
+                                                <span class="badge bg-success">Подтверждён</span>
+                                            {% elif reg.status == 'rejected' %}
+                                                <span class="badge bg-danger">Отклонён</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ reg.status }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ reg.created_at|date:"d.m.Y H:i" }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         </div>
-                    </div>
-                    
-                    <a href="{% url 'invite_specialist' event.id specialist.id %}" class="btn btn-sm btn-success" onclick="return confirm('Отправить приглашение?')">
-                        Пригласить
-                    </a>
-                {% endfor %}
+                    {% else %}
+                        <p class="text-muted mb-0">Приглашённых специалистов пока нет.</p>
+                    {% endif %}
+                </div>
             </div>
-        {% else %}
-            <p class="text-muted">Специалисты не найдены. Попробуйте изменить поисковый запрос.</p>
-        {% endif %}
-    </div>
-    
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header bg-info text-white">
-                <h5 class="mb-0">Как это работает</h5>
+
+            <!-- Записанные участники -->
+            <div class="card mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Записанные участники</h5>
+                </div>
+                <div class="card-body">
+                    {% if participants %}
+                        <div class="table-responsive">
+                            <table class="table table-striped mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Участник</th>
+                                        <th>Email</th>
+                                        <th>Дата записи</th>
+                                        <th>Код входа</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for reg in participants %}
+                                    <tr>
+                                        <td>{{ reg.user.username }}</td>
+                                        <td>{{ reg.user.email }}</td>
+                                        <td>{{ reg.created_at|date:"d.m.Y H:i" }}</td>
+                                        <td><code>{{ reg.entry_code }}</code></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">Записанных участников пока нет.</p>
+                    {% endif %}
+                </div>
             </div>
-            <div class="card-body">
-                <p>Вы можете найти специалистов по их навыкам и опыту.</p>
-                <p>После отправки приглашения специалист получит уведомление и сможет принять решение.</p>
-                <p><strong>Совет:</strong> напишите персонализированное сообщение, чтобы увеличить шансы на согласие.</p>
+
+            <!-- Результаты поиска -->
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Результаты поиска специалистов</h5>
+                </div>
+                <div class="card-body">
+                    {% if specialists %}
+                        <div class="list-group">
+                            {% for specialist in specialists %}
+                                <div class="list-group-item mb-2">
+                                    <div class="d-flex justify-content-between align-items-start gap-3">
+                                        <div>
+                                            <h5 class="mb-1">{{ specialist.username }}</h5>
+                                            <p class="mb-1">
+                                                <strong>Навыки:</strong>
+                                                {{ specialist.skills|default:"Не указаны"|truncatechars:100 }}
+                                            </p>
+                                            <p class="mb-1">
+                                                <strong>Опыт:</strong>
+                                                {{ specialist.experience|default:"Не указан"|truncatechars:100 }}
+                                            </p>
+                                            {% if specialist.portfolio %}
+                                                <p class="mb-0">
+                                                    <a href="{{ specialist.portfolio }}" target="_blank">Портфолио</a>
+                                                </p>
+                                            {% endif %}
+                                        </div>
+
+                                        <div class="text-end">
+                                            {% if specialist.id in registered_user_ids %}
+                                                <span class="badge bg-success">Уже записан</span>
+                                            {% elif specialist.id in invited_user_ids %}
+                                                <span class="badge bg-warning text-dark">Уже приглашён</span>
+                                            {% else %}
+                                                <a href="{% url 'invite_specialist' event.id specialist.id %}"
+                                                   class="btn btn-sm btn-success"
+                                                   onclick="return confirm('Отправить приглашение?')">
+                                                    Пригласить
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">
+                            Специалисты не найдены. Попробуйте изменить поисковый запрос.
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Информация</h5>
+                </div>
+                <div class="card-body">
+                    <p>На этой странице организатор может:</p>
+                    <ul class="mb-0">
+                        <li>искать специалистов по навыкам и опыту;</li>
+                        <li>проверять, кто уже записан на мероприятие;</li>
+                        <li>проверять, кому уже отправлено приглашение;</li>
+                        <li>приглашать новых специалистов.</li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>

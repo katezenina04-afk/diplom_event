@@ -4,22 +4,62 @@
 
 {% block content %}
 <div class="container mt-4">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
-            <li class="breadcrumb-item"><a href="{% url 'reports_dashboard' %}">Отчёты</a></li>
-            <li class="breadcrumb-item active">Мероприятия</li>
-        </ol>
-    </nav>
+    <h1 class="mb-3">📅 Отчёт по мероприятиям</h1>
+    <p class="text-muted">Отчёт содержит сведения о мероприятиях, их статусах и пользовательской активности.</p>
 
-    <h1>📅 Отчёт по мероприятиям</h1>
+    <!-- Фильтры -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">Фильтрация отчёта</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Дата от</label>
+                    <input type="date" name="date_from" class="form-control" value="{{ date_from }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Дата до</label>
+                    <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Категория</label>
+                    <select name="category" class="form-select">
+                        <option value="">Все</option>
+                        {% for category in categories %}
+                            <option value="{{ category.id }}" {% if selected_category == category.id|stringformat:"s" %}selected{% endif %}>
+                                {{ category.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Статус</label>
+                    <select name="status" class="form-select">
+                        <option value="">Все</option>
+                        {% for value, label in status_choices %}
+                            <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
 
+                <div class="col-12">
+                    <button type="submit" class="btn btn-success">Применить</button>
+                    <a href="{% url 'events_report' %}" class="btn btn-secondary ms-2">Сбросить</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Сводка -->
     <div class="row mb-4">
         <div class="col-md-3">
-            <div class="card text-white bg-primary">
+            <div class="card text-white bg-success">
                 <div class="card-body text-center">
                     <h5 class="card-title">Всего мероприятий</h5>
-                    <p class="display-4">{{ total_events }}</p>
+                    <p class="display-6">{{ total_events }}</p>
                 </div>
             </div>
         </div>
@@ -27,78 +67,101 @@
 
     <div class="row mb-4">
         <div class="col-md-6">
-            <div class="card">
+            <div class="card h-100">
                 <div class="card-header bg-secondary text-white">
                     <h5 class="mb-0">Статусы мероприятий</h5>
                 </div>
                 <div class="card-body">
-                    {% for name, stats in status_stats.items %}
-                        <div class="d-flex justify-content-between">
-                            <span>{{ name }}:</span>
-                            <strong>{{ stats.count }} ({{ stats.percent }}%)</strong>
-                        </div>
-                        <div class="progress mb-2">
-                            <div class="progress-bar" style="width: {{ stats.percent }}%"></div>
-                        </div>
-                    {% endfor %}
+                    {% if status_stats %}
+                        {% for name, stats in status_stats.items %}
+                            <div class="d-flex justify-content-between">
+                                <span>{{ name }}</span>
+                                <strong>{{ stats.count }} ({{ stats.percent }}%)</strong>
+                            </div>
+                            <div class="progress mb-2">
+                                <div class="progress-bar" style="width: {{ stats.percent }}%"></div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted mb-0">Нет данных для отображения.</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
+
         <div class="col-md-6">
-            <div class="card">
+            <div class="card h-100">
                 <div class="card-header bg-secondary text-white">
                     <h5 class="mb-0">Динамика по месяцам</h5>
                 </div>
                 <div class="card-body">
-                    {% for stat in monthly_stats %}
-                        <div class="d-flex justify-content-between">
-                            <span>{{ stat.month|date:"F Y" }}:</span>
-                            <strong>{{ stat.count }} ({{ stat.percent }}%)</strong>
-                        </div>
-                        <div class="progress mb-2">
-                            <div class="progress-bar bg-success" style="width: {{ stat.percent }}%"></div>
-                        </div>
-                    {% empty %}
-                        <p>Нет данных</p>
-                    {% endfor %}
+                    {% if monthly_stats %}
+                        {% for stat in monthly_stats %}
+                            <div class="d-flex justify-content-between">
+                                <span>{{ stat.month|date:"F Y" }}</span>
+                                <strong>{{ stat.count }} ({{ stat.percent }}%)</strong>
+                            </div>
+                            <div class="progress mb-2">
+                                <div class="progress-bar bg-success" style="width: {{ stat.percent }}%"></div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted mb-0">Нет данных для отображения.</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Таблица -->
     <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0">Список мероприятий</h5>
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Таблица отчёта по мероприятиям</h5>
         </div>
         <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Название</th>
-                            <th>Дата</th>
-                            <th>Организатор</th>
-                            <th>Участников</th>
-                            <th>Лайков</th>
-                            <th>Избранное</th>
-                            <th>Рейтинг</th>
+            {% if data %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Название</th>
+                                <th>Дата</th>
+                                <th>Организатор</th>
+                                <th>Категория</th>
+                                <th>Статус</th>
+                                <th>Участников</th>
+                                <th>Лайков</th>
+                                <th>В избранном</th>
+                            </tr>
                         </thead>
-                    <tbody>
-                        {% for item in data %}
-                        <tr>
-                            <td>{{ item.event.title }}</a></td>
-                            <td>{{ item.event.start_datetime|date:"d.m.Y" }}</a></td>
-                            <td>{{ item.event.creator.username }}</a></td>
-                            <td>{{ item.participants }}</a></td>
-                            <td>{{ item.likes }}</a></td>
-                            <td>{{ item.favorites }}</a></td>
-                            <td>⭐ {{ item.avg_rating }}</a></td>
-                         </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+                        <tbody>
+                            {% for item in data %}
+                            <tr>
+                                <td>{{ item.event.title }}</td>
+                                <td>{{ item.event.start_datetime|date:"d.m.Y H:i" }}</td>
+                                <td>{{ item.event.creator.username }}</td>
+                                <td>{{ item.event.category.name|default:"—" }}</td>
+                                <td>{{ item.event.get_status_display }}</td>
+                                <td>{{ item.participants }}</td>
+                                <td>{{ item.likes }}</td>
+                                <td>{{ item.favorites }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info mb-0">
+                    По выбранным условиям данные не найдены.
+                </div>
+            {% endif %}
         </div>
+    </div>
+
+    <div class="mt-3">
+        <a href="{% url 'export_events_excel' %}?{{ request.GET.urlencode }}" class="btn btn-success">
+            📥 Экспорт в Excel
+        </a>
     </div>
 </div>
 {% endblock %}

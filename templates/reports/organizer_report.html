@@ -4,12 +4,13 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h1>📊 Отчёт по организаторам</h1>
-    
-    <!-- Форма фильтрации -->
+    <h1 class="mb-3">📊 Отчёт по организаторам</h1>
+    <p class="text-muted">Отчёт содержит сведения об организаторах мероприятий и активности по созданным ими событиям.</p>
+
+    <!-- Фильтры -->
     <div class="card mb-4">
         <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">Фильтры</h5>
+            <h5 class="mb-0">Фильтрация отчёта</h5>
         </div>
         <div class="card-body">
             <form method="get" class="row g-3">
@@ -33,20 +34,20 @@
                     </select>
                 </div>
                 <div class="col-md-3 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary">Применить фильтр</button>
+                    <button type="submit" class="btn btn-primary">Применить</button>
                     <a href="{% url 'organizer_report' %}" class="btn btn-secondary ms-2">Сбросить</a>
                 </div>
             </form>
         </div>
     </div>
-    
-    <!-- Статистика -->
+
+    <!-- Сводка -->
     <div class="row mb-4">
         <div class="col-md-4">
             <div class="card text-white bg-primary">
                 <div class="card-body text-center">
                     <h5 class="card-title">Всего организаторов</h5>
-                    <p class="display-4">{{ total_organizers }}</p>
+                    <p class="display-6">{{ total_organizers }}</p>
                 </div>
             </div>
         </div>
@@ -54,45 +55,51 @@
             <div class="card text-white bg-success">
                 <div class="card-body text-center">
                     <h5 class="card-title">Всего мероприятий</h5>
-                    <p class="display-4">{{ total_events }}</p>
+                    <p class="display-6">{{ total_events }}</p>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <!-- Таблица -->
     <div class="card">
         <div class="card-header bg-secondary text-white">
-            <h5 class="mb-0">Детальная информация</h5>
+            <h5 class="mb-0">Таблица отчёта по организаторам</h5>
         </div>
         <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Организатор</th>
-                            <th>Email</th>
-                            <th>Мероприятий</th>
-                            <th>Участников</th>
-                            <th>Лайков</th>
+            {% if data %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Организатор</th>
+                                <th>Email</th>
+                                <th>Количество мероприятий</th>
+                                <th>Количество участников</th>
+                                <th>Количество лайков</th>
+                            </tr>
                         </thead>
-                    <tbody>
-                        {% for item in data %}
-                        <tr>
-                            <td>{{ item.user.username }}</a></td>
-                            <td>{{ item.user.email }}</a></td>
-                            <td>{{ item.events_count }}</a></td>
-                            <td>{{ item.total_participants }}</a></td>
-                            <td>{{ item.total_likes }}</a></td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+                        <tbody>
+                            {% for item in data %}
+                            <tr>
+                                <td>{{ item.user.username }}</td>
+                                <td>{{ item.user.email }}</td>
+                                <td>{{ item.events_count }}</td>
+                                <td>{{ item.total_participants }}</td>
+                                <td>{{ item.total_likes }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info mb-0">
+                    По выбранным условиям данные не найдены.
+                </div>
+            {% endif %}
         </div>
     </div>
-    
-    <!-- Экспорт -->
+
     <div class="mt-3">
         <a href="{% url 'export_organizers_excel' %}?{{ request.GET.urlencode }}" class="btn btn-success">
             📥 Экспорт в Excel

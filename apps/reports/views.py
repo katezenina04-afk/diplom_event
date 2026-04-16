@@ -2,57 +2,109 @@ from django.shortcuts import render
 from django.contrib.admin.views.decorators import staff_member_required
 from django.http import HttpResponse
 from django.db.models import Count, Sum, Avg
-from events.models import Event, Registration, Comment, Like, Favorite, Review
+from events.models import Event, Registration, Comment, Like, Favorite, Review, Category
 from accounts.models import User
 from datetime import datetime
 import pandas as pd
 from io import BytesIO
 from django.db import models
+import openpyxl
+from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+from openpyxl.utils import get_column_letter
+from django.http import HttpResponse
+
+def style_excel_sheet(ws, title, headers, filter_data=None):
+    """
+    Красивое оформление Excel-листа:
+    - большой заголовок
+    - строка с фильтрами
+    - шапка таблицы
+    - автоширина колонок
+    """
+    header_fill = PatternFill(fill_type='solid', fgColor='D9EAF7')
+    title_fill = PatternFill(fill_type='solid', fgColor='B4C7E7')
+    thin = Side(border_style='thin', color='000000')
+
+    # Заголовок
+    last_col = get_column_letter(len(headers))
+    ws.merge_cells(f'A1:{last_col}1')
+    ws['A1'] = title
+    ws['A1'].font = Font(bold=True, size=14)
+    ws['A1'].alignment = Alignment(horizontal='center', vertical='center')
+    ws['A1'].fill = title_fill
+    ws['A1'].border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+    current_row = 2
+
+    # Фильтры
+    if filter_data:
+        for label, value in filter_data:
+            ws.cell(row=current_row, column=1, value=label).font = Font(bold=True)
+            ws.cell(row=current_row, column=2, value=value if value else '—')
+            current_row += 1
+
+    # Пустая строка перед таблицей
+    current_row += 1
+
+    # Заголовки таблицы
+    for col_num, header in enumerate(headers, 1):
+        cell = ws.cell(row=current_row, column=col_num)
+        cell.value = header
+        cell.font = Font(bold=True)
+        cell.alignment = Alignment(horizontal='center', vertical='center')
+        cell.fill = header_fill
+        cell.border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+    return current_row + 1  # строка, с которой начинается таблица
 
 @staff_member_required
 def reports_dashboard(request):
     """Главная страница отчётов"""
     return render(request, 'reports/dashboard.html')
 
-
 @staff_member_required
 def organizer_report(request):
     """Отчёт по организаторам"""
-    organizers = User.objects.filter(created_events__isnull=False).distinct()
-    
-    # Фильтрация
+    organizers = User.objects.filter(created_events__isnull=False).distinct().order_by('username')
+
     date_from = request.GET.get('date_from')
     date_to = request.GET.get('date_to')
     organizer_id = request.GET.get('organizer')
-    
+
     data = []
+    filtered_total_events = 0
+
     for user in organizers:
+        if organizer_id and str(user.id) != str(organizer_id):
+            continue
+
         events = user.created_events.all()
-        
-        # Применяем фильтры
+
         if date_from:
-            events = events.filter(start_datetime__gte=date_from)
+            events = events.filter(start_datetime__date__gte=date_from)
         if date_to:
-            events = events.filter(start_datetime__lte=date_to)
-        
+            events = events.filter(start_datetime__date__lte=date_to)
+
         events_count = events.count()
-        total_participants = Registration.objects.filter(event__in=events).count()
+        filtered_total_events += events_count
+
+        total_participants = Registration.objects.filter(event__in=events, is_invited=False).count()
         total_likes = Like.objects.filter(event__in=events).count()
-        
-        data.append({
-            'user': user,
-            'events_count': events_count,
-            'total_participants': total_participants,
-            'total_likes': total_likes,
-        })
-    
-    # Сортируем
+
+        if events_count > 0 or not any([date_from, date_to, organizer_id]):
+            data.append({
+                'user': user,
+                'events_count': events_count,
+                'total_participants': total_participants,
+                'total_likes': total_likes,
+            })
+
     data.sort(key=lambda x: x['events_count'], reverse=True)
-    
+
     context = {
         'data': data,
         'total_organizers': len(data),
-        'total_events': Event.objects.count(),
+        'total_events': filtered_total_events,
         'date_from': date_from,
         'date_to': date_to,
         'selected_organizer': organizer_id,
@@ -60,58 +112,81 @@ def organizer_report(request):
     }
     return render(request, 'reports/organizer_report.html', context)
 
-
 @staff_member_required
 def events_report(request):
     """Отчёт по мероприятиям"""
-    events = Event.objects.all().order_by('-created_at')
-    
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+    category_id = request.GET.get('category')
+    status = request.GET.get('status')
+
+    events = Event.objects.select_related('creator', 'category').all().order_by('-start_datetime')
+
+    if date_from:
+        events = events.filter(start_datetime__date__gte=date_from)
+    if date_to:
+        events = events.filter(start_datetime__date__lte=date_to)
+    if category_id:
+        events = events.filter(category_id=category_id)
+    if status:
+        events = events.filter(status=status)
+
+    total_events = events.count()
+
     data = []
     for event in events:
+        participants = Registration.objects.filter(event=event, is_invited=False).count()
+        likes = Like.objects.filter(event=event).count()
+        favorites = Favorite.objects.filter(event=event).count()
+
         data.append({
             'event': event,
-            'participants': event.registrations.count(),
-            'likes': event.likes.count(),
-            'favorites': event.favorites.count(),
-            'comments': event.comments.count(),
-            'avg_rating': event.reviews.aggregate(avg=models.Avg('rating'))['avg'] or 0,
+            'participants': participants,
+            'likes': likes,
+            'favorites': favorites,
         })
-    
-    # Статистика по статусам с процентами
-    total_events = events.count()
+
+    # Статистика по статусам
     status_stats = {}
-    for status_code, status_name in Event.STATUS_CHOICES:
-        count = Event.objects.filter(status=status_code).count()
-        percent = (count / total_events * 100) if total_events > 0 else 0
-        status_stats[status_name] = {'count': count, 'percent': round(percent, 1)}
-    
-    # Статистика по месяцам с процентами
-    from django.db.models.functions import TruncMonth
-    monthly_stats = Event.objects.filter(status='published').annotate(
-        month=TruncMonth('start_datetime')
-    ).values('month').annotate(
-        count=Count('id')
-    ).order_by('month')
-    
-    # Для месячной статистики считаем проценты
-    total_monthly = sum(item['count'] for item in monthly_stats)
-    monthly_data = []
-    for item in monthly_stats:
-        percent = (item['count'] / total_monthly * 100) if total_monthly > 0 else 0
-        monthly_data.append({
-            'month': item['month'],
-            'count': item['count'],
-            'percent': round(percent, 1)
+    status_display = dict(Event.STATUS_CHOICES) if hasattr(Event, 'STATUS_CHOICES') else {}
+
+    if total_events > 0:
+        for key, label in status_display.items():
+            count = events.filter(status=key).count()
+            if count > 0:
+                status_stats[label] = {
+                    'count': count,
+                    'percent': round((count / total_events) * 100, 1)
+                }
+
+    # Статистика по месяцам
+    monthly_stats = []
+    months = events.dates('start_datetime', 'month', order='DESC')
+    for month in months[:6]:
+        count = events.filter(
+            start_datetime__year=month.year,
+            start_datetime__month=month.month
+        ).count()
+        percent = round((count / total_events) * 100, 1) if total_events > 0 else 0
+        monthly_stats.append({
+            'month': month,
+            'count': count,
+            'percent': percent
         })
-    
+
     context = {
         'data': data,
-        'status_stats': status_stats,
-        'monthly_stats': monthly_data,
         'total_events': total_events,
+        'status_stats': status_stats,
+        'monthly_stats': monthly_stats,
+        'categories': Category.objects.all(),
+        'selected_category': category_id,
+        'selected_status': status,
+        'date_from': date_from,
+        'date_to': date_to,
+        'status_choices': Event.STATUS_CHOICES if hasattr(Event, 'STATUS_CHOICES') else [],
     }
     return render(request, 'reports/events_report.html', context)
-
 
 @staff_member_required
 def participants_report(request):
@@ -152,55 +227,103 @@ def participants_report(request):
 
 @staff_member_required
 def export_events_excel(request):
-    """Экспорт мероприятий в Excel"""
-    events = Event.objects.all().order_by('-start_datetime')
-    
-    # Создаём DataFrame
-    df = pd.DataFrame([{
-        'ID': e.id,
-        'Название': e.title,
-        'Дата начала': e.start_datetime.strftime('%d.%m.%Y %H:%M'),
-        'Дата окончания': e.end_datetime.strftime('%d.%m.%Y %H:%M') if e.end_datetime else '',
-        'Место': e.location,
-        'Категория': e.category.name if e.category else '',
-        'Цена': e.price if not e.is_free else 'Бесплатно',
-        'Участников': e.registrations.count(),
-        'Лайков': e.likes.count(),
-        'Избранное': e.favorites.count(),
-        'Комментариев': e.comments.count(),
-        'Средний рейтинг': round(e.reviews.aggregate(avg=models.Avg('rating'))['avg'] or 0, 1),
-        'Статус': e.get_status_display(),
-        'Организатор': e.creator.username,
-    } for e in events])
-    
-    # Создаём Excel файл
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, sheet_name='Мероприятия', index=False)
-        
-        # Настраиваем ширину колонок
-        worksheet = writer.sheets['Мероприятия']
-        for column in worksheet.columns:
-            max_length = 0
-            column_letter = column[0].column_letter
-            for cell in column:
-                try:
-                    if len(str(cell.value)) > max_length:
-                        max_length = len(str(cell.value))
-                except:
-                    pass
-            adjusted_width = min(max_length + 2, 50)
-            worksheet.column_dimensions[column_letter].width = adjusted_width
-    
-    output.seek(0)
-    
+    """Экспорт отчёта по мероприятиям в Excel с учётом фильтров"""
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+    category_id = request.GET.get('category')
+    status = request.GET.get('status')
+
+    events = Event.objects.select_related('creator', 'category').all().order_by('-start_datetime')
+
+    if date_from:
+        events = events.filter(start_datetime__date__gte=date_from)
+    if date_to:
+        events = events.filter(start_datetime__date__lte=date_to)
+    if category_id:
+        events = events.filter(category_id=category_id)
+    if status:
+        events = events.filter(status=status)
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Мероприятия"
+
+    headers = [
+        'Название',
+        'Дата',
+        'Организатор',
+        'Категория',
+        'Статус',
+        'Участников',
+        'Лайков',
+        'В избранном'
+    ]
+
+    category_name = 'Все'
+    if category_id:
+        category = Category.objects.filter(id=category_id).first()
+        if category:
+            category_name = category.name
+
+    status_name = status or 'Все'
+
+    start_row = style_excel_sheet(
+        ws,
+        title='Отчёт по мероприятиям',
+        headers=headers,
+        filter_data=[
+            ('Дата от', date_from or '—'),
+            ('Дата до', date_to or '—'),
+            ('Категория', category_name),
+            ('Статус', status_name),
+        ]
+    )
+
+    thin = Side(border_style='thin', color='000000')
+    row_num = start_row
+
+    for event in events:
+        participants = Registration.objects.filter(event=event, is_invited=False).count()
+        likes = Like.objects.filter(event=event).count()
+        favorites = Favorite.objects.filter(event=event).count()
+
+        values = [
+            event.title,
+            event.start_datetime.strftime('%d.%m.%Y %H:%M') if event.start_datetime else '',
+            event.creator.username if event.creator else '',
+            event.category.name if event.category else '—',
+            event.get_status_display() if hasattr(event, 'get_status_display') else event.status,
+            participants,
+            likes,
+            favorites,
+        ]
+
+        for col_num, value in enumerate(values, 1):
+            cell = ws.cell(row=row_num, column=col_num, value=value)
+            cell.border = Border(left=thin, right=thin, top=thin, bottom=thin)
+            if col_num >= 6:
+                cell.alignment = Alignment(horizontal='center')
+
+        row_num += 1
+
+    # Автоширина колонок
+    for col_num in range(1, len(headers) + 1):
+        max_length = 0
+        column_letter = get_column_letter(col_num)
+
+        for row in range(1, ws.max_row + 1):
+            cell = ws.cell(row=row, column=col_num)
+            if cell.value is not None:
+                max_length = max(max_length, len(str(cell.value)))
+
+        ws.column_dimensions[column_letter].width = max_length + 3
+
     response = HttpResponse(
-        output.getvalue(),
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
-    response['Content-Disposition'] = f'attachment; filename=events_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+    response['Content-Disposition'] = 'attachment; filename=events_report.xlsx'
+    wb.save(response)
     return response
-
 
 @staff_member_required
 def export_specialists_excel(request):
@@ -233,4 +356,94 @@ def export_specialists_excel(request):
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
     response['Content-Disposition'] = f'attachment; filename=specialists_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+    return response
+
+@staff_member_required
+def export_organizers_excel(request):
+    """Экспорт отчёта по организаторам в Excel с учётом фильтров"""
+    organizers = User.objects.filter(created_events__isnull=False).distinct().order_by('username')
+
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+    organizer_id = request.GET.get('organizer')
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Организаторы"
+
+    headers = [
+        'Организатор',
+        'Email',
+        'Количество мероприятий',
+        'Количество участников',
+        'Количество лайков'
+    ]
+
+    organizer_name = 'Все'
+    if organizer_id:
+        selected = organizers.filter(id=organizer_id).first()
+        if selected:
+            organizer_name = selected.username
+
+    start_row = style_excel_sheet(
+        ws,
+        title='Отчёт по организаторам',
+        headers=headers,
+        filter_data=[
+            ('Дата от', date_from or '—'),
+            ('Дата до', date_to or '—'),
+            ('Организатор', organizer_name),
+        ]
+    )
+
+    thin = Side(border_style='thin', color='000000')
+    row_num = start_row
+
+    for user in organizers:
+        if organizer_id and str(user.id) != str(organizer_id):
+            continue
+
+        events = user.created_events.all()
+
+        if date_from:
+            events = events.filter(start_datetime__date__gte=date_from)
+        if date_to:
+            events = events.filter(start_datetime__date__lte=date_to)
+
+        events_count = events.count()
+        total_participants = Registration.objects.filter(event__in=events, is_invited=False).count()
+        total_likes = Like.objects.filter(event__in=events).count()
+
+        if events_count > 0 or not any([date_from, date_to, organizer_id]):
+            values = [
+                user.username,
+                user.email,
+                events_count,
+                total_participants,
+                total_likes
+            ]
+            for col_num, value in enumerate(values, 1):
+                cell = ws.cell(row=row_num, column=col_num, value=value)
+                cell.border = Border(left=thin, right=thin, top=thin, bottom=thin)
+                if col_num >= 3:
+                    cell.alignment = Alignment(horizontal='center')
+            row_num += 1
+
+    # Автоширина колонок
+    for col_num in range(1, len(headers) + 1):
+        max_length = 0
+        column_letter = get_column_letter(col_num)
+
+        for row in range(1, ws.max_row + 1):
+            cell = ws.cell(row=row, column=col_num)
+            if cell.value is not None:
+                max_length = max(max_length, len(str(cell.value)))
+
+        ws.column_dimensions[column_letter].width = max_length + 3
+
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = 'attachment; filename=organizers_report.xlsx'
+    wb.save(response)
     return response
