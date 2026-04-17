@@ -184,23 +184,23 @@ class OrganizerSubscription(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='organizer_subscriptions',
-        verbose_name='Подписчик'
+        verbose_name='Пользователь'
     )
     organizer = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='subscribers',
+        related_name='organizer_followers',
         verbose_name='Организатор'
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        verbose_name = 'Подписка на организатора'
-        verbose_name_plural = 'Подписки на организаторов'
+        verbose_name = 'Избранный организатор'
+        verbose_name_plural = 'Избранные организаторы'
         unique_together = ['user', 'organizer']
 
     def __str__(self):
-        return f"{self.user.username} подписан на {self.organizer.username}"
+        return f"{self.user.username} → {self.organizer.username}"
 
 class Notification(models.Model):
     """Уведомление для пользователя"""

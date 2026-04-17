@@ -10,7 +10,7 @@
                 <span class="badge bg-light text-dark mb-3 px-3 py-2">Панель аналитики</span>
                 <h1 class="display-6 fw-bold mb-3">Отчёты и аналитика</h1>
                 <p class="lead mb-0">
-                    Панель предназначена для анализа активности организаторов, статистики по мероприятиям и выгрузки данных в Excel.
+                    Панель предназначена для анализа активности организаторов, статистики по мероприятиям и экспорта данных.
                 </p>
             </div>
             <div class="col-lg-4 mt-4 mt-lg-0 text-lg-end">
@@ -21,19 +21,14 @@
 </section>
 
 <div class="row g-4 mb-4">
-    <div class="col-md-6 col-xl-4">
+    <div class="col-md-6">
         <div class="card report-card h-100 shadow-sm border-0 rounded-4">
             <div class="card-body p-4 d-flex flex-column">
                 <div class="report-icon mb-3"><i class="bi bi-people"></i></div>
-                <h3 class="h5 fw-bold">Организаторы</h3>
+                <h3 class="h5 fw-bold">Отчёт по организаторам</h3>
                 <p class="text-muted">
-                    Отчет по активности организаторов: количество мероприятий, участников и пользовательской активности.
+                    Анализ активности организаторов, количества созданных ими мероприятий, участников и пользовательской активности.
                 </p>
-                <ul class="small text-muted ps-3">
-                    <li>количество созданных мероприятий</li>
-                    <li>общее число участников</li>
-                    <li>лайки и интерес пользователей</li>
-                </ul>
                 <div class="mt-auto">
                     <a href="{% url 'organizer_report' %}" class="btn btn-primary">Открыть</a>
                 </div>
@@ -41,70 +36,43 @@
         </div>
     </div>
 
-    <div class="col-md-6 col-xl-4">
+    <div class="col-md-6">
         <div class="card report-card h-100 shadow-sm border-0 rounded-4">
             <div class="card-body p-4 d-flex flex-column">
                 <div class="report-icon mb-3"><i class="bi bi-calendar-event"></i></div>
-                <h3 class="h5 fw-bold">Мероприятия</h3>
+                <h3 class="h5 fw-bold">Отчёт по мероприятиям</h3>
                 <p class="text-muted">
-                    Статистика по мероприятиям, категориям, динамике публикации и пользовательской активности.
+                    Статистика по мероприятиям, категориям, статусам, лайкам, избранному и активности участников.
                 </p>
-                <ul class="small text-muted ps-3">
-                    <li>статусы мероприятий</li>
-                    <li>динамика по месяцам</li>
-                    <li>активность участников</li>
-                </ul>
                 <div class="mt-auto">
                     <a href="{% url 'events_report' %}" class="btn btn-success">Открыть</a>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <div class="col-md-12 col-xl-4">
-        <div class="card report-card h-100 shadow-sm border-0 rounded-4">
-            <div class="card-body p-4 d-flex flex-column">
-                <div class="report-icon mb-3"><i class="bi bi-file-earmark-excel"></i></div>
-                <h3 class="h5 fw-bold">Экспорт данных</h3>
-                <p class="text-muted">
-                    Выгрузка отчетов в Excel для дальнейшей обработки, хранения и представления результатов.
-                </p>
-                <div class="d-flex flex-column gap-2 mt-auto">
-                    <a href="{% url 'export_events_excel' %}" class="btn btn-outline-success">
-                        <i class="bi bi-file-excel"></i> Экспорт мероприятий
-                    </a>
-                    <a href="{% url 'export_organizers_excel' %}" class="btn btn-outline-success">
-                        <i class="bi bi-file-excel"></i> Экспорт организаторов
-                    </a>
-                </div>
-            </div>
+<div class="card shadow-sm border-0 rounded-4">
+    <div class="card-body p-4">
+        <h3 class="h5 fw-bold mb-3">Экспорт данных</h3>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'export_events_excel' %}" class="btn btn-outline-success">
+                <i class="bi bi-file-earmark-excel"></i> Экспорт мероприятий
+            </a>
+            <a href="{% url 'export_organizers_excel' %}" class="btn btn-outline-success">
+                <i class="bi bi-file-earmark-excel"></i> Экспорт организаторов
+            </a>
         </div>
     </div>
 </div>
 
 <style>
-    .reports-hero {
-        background: linear-gradient(135deg, #111827, #2563eb);
-    }
-
-    .report-card {
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .report-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 .75rem 1.5rem rgba(0,0,0,.08) !important;
-    }
-
+    .reports-hero { background: linear-gradient(135deg, #111827, #2563eb); }
+    .report-card { transition: transform .2s ease, box-shadow .2s ease; }
+    .report-card:hover { transform: translateY(-4px); box-shadow: 0 .75rem 1.5rem rgba(0,0,0,.08) !important; }
     .report-icon {
-        width: 56px;
-        height: 56px;
-        border-radius: 16px;
-        background: #f3f4f6;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
+        width: 56px; height: 56px; border-radius: 16px; background: #f3f4f6;
+        display: inline-flex; align-items: center; justify-content: center; font-size: 1.5rem;
     }
 </style>
 {% endblock %}

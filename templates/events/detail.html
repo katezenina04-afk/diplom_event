@@ -4,153 +4,229 @@
 {% block title %}{{ event.title }}{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-8">
-        <h1>{{ event.title }}</h1>
-
-        {% if event.image %}
-            <img src="{{ event.image.url }}" class="img-fluid mb-3" alt="{{ event.title }}">
-        {% endif %}
-
-        {% if event.category %}
-            <div class="mb-2">
-                <span class="badge bg-info">{{ event.category.name }}</span>
+<section class="mb-4">
+    <div class="detail-hero rounded-4 p-4 p-lg-5 text-white">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                {% if event.category %}
+                    <span class="badge bg-light text-dark mb-3 px-3 py-2">{{ event.category.name }}</span>
+                {% endif %}
+                <h1 class="display-6 fw-bold mb-3">{{ event.title }}</h1>
+                <p class="lead mb-0">
+                    {{ event.description|default:"Описание мероприятия пока не заполнено."|striptags|truncatechars:220 }}
+                </p>
             </div>
+            <div class="col-lg-4 mt-4 mt-lg-0 text-lg-end">
+                <a href="{% url 'event_list' %}" class="btn btn-light btn-lg px-4">К афише</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0 rounded-4 mb-4 overflow-hidden">
+            {% if event.image %}
+                <img src="{{ event.image.url }}" class="detail-cover" alt="{{ event.title }}">
+            {% endif %}
+            <div class="card-body p-4">
+                <h2 class="h5 fw-bold mb-3">Описание</h2>
+                <div class="text-muted">
+                    {{ event.description|linebreaks }}
+                </div>
+            </div>
+        </div>
+
+        {% if organizer_other_events %}
+        <details class="card shadow-sm border-0 rounded-4 mb-4">
+            <summary class="card-header bg-white d-flex justify-content-between align-items-center rounded-4" style="cursor:pointer;">
+                <a href="{% url 'organizer_profile' event.creator.id %}" class="text-decoration-none fw-bold">
+                    Другие мероприятия организатора
+                </a>
+                <span class="text-muted">▼</span>
+            </summary>
+            <div class="card-body p-4">
+                <div class="list-group list-group-flush">
+                    {% for other_event in organizer_other_events %}
+                        <a href="{% url 'event_detail' other_event.id %}" class="list-group-item list-group-item-action border-0 px-0">
+                            <strong>{{ other_event.title }}</strong><br>
+                            <small class="text-muted">{{ other_event.start_datetime|date:"d.m.Y H:i" }}</small>
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </details>
         {% endif %}
 
-        <p><strong>Описание:</strong> {{ event.description|linebreaks }}</p>
+        {% if same_location_events %}
+        <details class="card shadow-sm border-0 rounded-4 mb-4">
+            <summary class="card-header bg-white d-flex justify-content-between align-items-center rounded-4" style="cursor:pointer;">
+                <span class="fw-bold">Другие мероприятия на этой площадке</span>
+                <span class="text-muted">▼</span>
+            </summary>
+            <div class="card-body p-4">
+                <div class="list-group list-group-flush">
+                    {% for location_event in same_location_events %}
+                        <a href="{% url 'event_detail' location_event.id %}" class="list-group-item list-group-item-action border-0 px-0">
+                            <strong>{{ location_event.title }}</strong><br>
+                            <small class="text-muted">{{ location_event.start_datetime|date:"d.m.Y H:i" }}</small>
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </details>
+        {% endif %}
+
+        <div class="card shadow-sm border-0 rounded-4 mb-4">
+            <div class="card-header bg-white rounded-top-4">
+                <h2 class="h5 fw-bold mb-0">Комментарии ({{ event.comments.count }})</h2>
+            </div>
+            <div class="card-body p-4">
+                {% if user.is_authenticated %}
+                    <form method="post" action="{% url 'add_comment' event.id %}" class="mb-4">
+                        {% csrf_token %}
+                        <textarea name="text" class="form-control mb-2" rows="3" placeholder="Напишите комментарий..."></textarea>
+                        <button type="submit" class="btn btn-primary">Отправить</button>
+                    </form>
+                {% else %}
+                    <p class="text-muted"><a href="{% url 'login' %}">Войдите</a>, чтобы оставить комментарий.</p>
+                {% endif %}
+
+                {% for comment in event.comments.all %}
+                    <div class="comment-item pb-3 mb-3 border-bottom">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <strong>{{ comment.user.username }}</strong>
+                            <small class="text-muted">{{ comment.created_at|date:"d.m.Y H:i" }}</small>
+                        </div>
+                        <div class="mt-2 text-muted">{{ comment.text|linebreaks }}</div>
+                        {% if user.is_authenticated and user == comment.user or user.is_superuser %}
+                            <a href="{% url 'delete_comment' comment.id %}" class="small text-danger text-decoration-none"
+                               onclick="return confirm('Удалить комментарий?')">Удалить</a>
+                        {% endif %}
+                    </div>
+                {% empty %}
+                    <p class="text-muted mb-0">Пока нет комментариев. Будьте первым.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        {% if event.location %}
+        <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+            <div class="card-header bg-white rounded-top-4">
+                <h2 class="h5 fw-bold mb-0">Место проведения</h2>
+            </div>
+            <div class="card-body p-4">
+                <p><strong>Адрес:</strong> {{ event.location }}</p>
+                <div id="map" style="width:100%; height:420px; border-radius:16px;"></div>
+            </div>
+        </div>
+        {% endif %}
     </div>
 
-    <div class="col-md-4">
-        <div class="card mb-3">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Информация</h5>
-            </div>
-            <div class="card-body">
-                <p><strong>Дата начала:</strong> {{ event.start_datetime|date:"d.m.Y H:i" }}</p>
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 rounded-4 sticky-top" style="top: 90px;">
+            <div class="card-body p-4">
+                <h2 class="h5 fw-bold mb-3">Информация</h2>
+
+                <p class="mb-2"><strong>Дата начала:</strong><br>{{ event.start_datetime|date:"d.m.Y H:i" }}</p>
 
                 {% if event.end_datetime %}
-                    <p><strong>Дата окончания:</strong> {{ event.end_datetime|date:"d.m.Y H:i" }}</p>
+                    <p class="mb-2"><strong>Дата окончания:</strong><br>{{ event.end_datetime|date:"d.m.Y H:i" }}</p>
                 {% endif %}
 
-                <p><strong>Место:</strong> {{ event.location }}</p>
+                <p class="mb-2"><strong>Место:</strong><br>{{ event.location }}</p>
 
                 {% if event.venue_name %}
-                    <p><strong>Площадка:</strong> {{ event.venue_name }}</p>
+                    <p class="mb-2"><strong>Площадка:</strong><br>{{ event.venue_name }}</p>
                 {% endif %}
 
-                <p>
-                    <strong>Цена:</strong>
-                    {% if event.is_free %}
-                        Бесплатно
-                    {% else %}
-                        {{ event.price }} руб.
-                    {% endif %}
+                <p class="mb-2">
+                    <strong>Цена:</strong><br>
+                    {% if event.is_free %}Бесплатно{% else %}{{ event.price }} руб.{% endif %}
                 </p>
 
-                <p>
-                    <strong>Участников:</strong>
+                <p class="mb-2">
+                    <strong>Участников:</strong><br>
                     {{ event.get_participants_count }}
-                    {% if event.max_participants %}
-                        / {{ event.max_participants }}
-                    {% endif %}
+                    {% if event.max_participants %}/ {{ event.max_participants }}{% endif %}
                 </p>
 
-                <p>
-                    <strong>Организатор:</strong>
-                    <a href="{% url 'organizer_profile' event.creator.id %}">
+                <p class="mb-3">
+                    <strong>Организатор:</strong><br>
+                    <a href="{% url 'organizer_profile' event.creator.id %}" class="text-decoration-none fw-semibold">
                         {{ event.creator.username }}
                     </a>
                 </p>
 
                 {% if user.is_authenticated and event.creator != user %}
-                    <div class="mb-3">
-                        <a href="{% url 'toggle_organizer_subscription' event.creator.id %}"
-                           class="btn btn-outline-primary w-100">
-                            {% if is_subscribed_to_organizer %}
-                                Отписаться от организатора
-                            {% else %}
-                                Подписаться на организатора
-                            {% endif %}
-                        </a>
-                    </div>
+                    <a href="{% url 'toggle_organizer_subscription' event.creator.id %}" class="btn btn-outline-warning w-100 mb-3">
+                        {% if is_subscribed_to_organizer %}
+                            Удалить организатора из избранного
+                        {% else %}
+                            Добавить организатора в избранное
+                        {% endif %}
+                    </a>
                 {% endif %}
 
                 <div class="d-grid gap-2 mb-3">
                     {% if event.venue_url %}
-                        <a href="{{ event.venue_url }}" target="_blank" class="btn btn-outline-secondary">
-                            Сайт площадки
-                        </a>
+                        <a href="{{ event.venue_url }}" target="_blank" class="btn btn-outline-secondary">Сайт площадки</a>
                     {% endif %}
-
                     {% if event.organizer_url %}
-                        <a href="{{ event.organizer_url }}" target="_blank" class="btn btn-outline-secondary">
-                            Сайт организатора
-                        </a>
+                        <a href="{{ event.organizer_url }}" target="_blank" class="btn btn-outline-secondary">Сайт организатора</a>
                     {% endif %}
-
                     {% if event.external_url %}
-                        <a href="{{ event.external_url }}" target="_blank" class="btn btn-outline-secondary">
-                            Подробнее
-                        </a>
+                        <a href="{{ event.external_url }}" target="_blank" class="btn btn-outline-secondary">Подробнее</a>
                     {% endif %}
                 </div>
 
                 {% if is_past %}
-                    <div class="alert alert-danger mb-3">
-                        <i class="bi bi-calendar-x"></i>
-                        <strong>Это мероприятие уже прошло!</strong>
-                        <p class="mb-0 mt-1">Вы не можете записаться на прошедшее мероприятие.</p>
+                    <div class="alert alert-danger rounded-4">
+                        <strong>Это мероприятие уже прошло.</strong>
+                        <div class="small mt-1">Запись на него недоступна.</div>
                     </div>
                 {% endif %}
 
-                <div class="text-center mb-3">
-                    <button id="like-button" class="btn btn-outline-danger" data-event-id="{{ event.id }}">
+                <div class="d-flex gap-2 mb-3">
+                    <button id="like-button" class="btn btn-outline-danger flex-fill" data-event-id="{{ event.id }}">
                         <i class="bi bi-heart{% if user_liked %}-fill{% endif %}"></i>
-                        <span id="likes-count">{{ event.likes.count }}</span> ❤️
+                        <span id="likes-count">{{ event.likes.count }}</span>
                     </button>
-                </div>
 
-                <div class="text-center mb-3">
-                    <button id="favorite-button" class="btn btn-outline-warning" data-event-id="{{ event.id }}">
+                    <button id="favorite-button" class="btn btn-outline-warning flex-fill" data-event-id="{{ event.id }}">
                         <i class="bi bi-star{% if user_favorited %}-fill{% endif %}"></i>
-                        <span id="favorites-count">{{ event.favorites.count }}</span> ⭐
+                        <span id="favorites-count">{{ event.favorites.count }}</span>
                     </button>
                 </div>
 
                 {% if user.is_authenticated %}
                     {% if event.creator == user %}
                         <div class="d-grid gap-2">
-                            <a href="{% url 'edit_event' event.id %}" class="btn btn-warning">Редактировать</a>
-                            <a href="{% url 'delete_event' event.id %}"
-                               class="btn btn-danger"
-                               onclick="return confirm('Удалить мероприятие?')">
-                                Удалить
-                            </a>
-                            <a href="{% url 'search_specialists' event.id %}" class="btn btn-outline-info">
-                                🔍 Найти специалистов
-                            </a>
+                            <a href="{% url 'edit_event' event.id %}" class="btn btn-primary">Редактировать</a>
+                            <a href="{% url 'delete_event' event.id %}" class="btn btn-outline-danger"
+                               onclick="return confirm('Удалить мероприятие?')">Удалить</a>
+                            <a href="{% url 'search_specialists' event.id %}" class="btn btn-outline-info">Найти специалистов</a>
+                            <a href="{% url 'event_statistics' event.id %}" class="btn btn-outline-secondary">Статистика</a>
                         </div>
                     {% else %}
                         {% if has_pending_invitation %}
-                            <div class="alert alert-info">
-                                <strong>📨 Вы приглашены на это мероприятие!</strong>
-                                <p class="mb-2">Организатор пригласил вас принять участие.</p>
+                            <div class="alert alert-info rounded-4">
+                                <strong>Вы приглашены на это мероприятие.</strong>
+                                <p class="small mb-2">Организатор отправил вам приглашение.</p>
                                 <a href="{% url 'accept_invitation' registration.id %}" class="btn btn-success w-100">
                                     Принять приглашение
                                 </a>
                             </div>
                         {% elif is_registered %}
-                            <div class="alert alert-success">
-                                <strong>Вы записаны!</strong>
+                            <div class="alert alert-success rounded-4">
+                                <strong>Вы записаны.</strong>
                                 {% if registration %}
-                                    <p class="mb-0 mt-2"><strong>Код для входа:</strong> {{ registration.entry_code }}</p>
+                                    <div class="small mt-2">Код для входа: <strong>{{ registration.entry_code }}</strong></div>
                                 {% endif %}
                             </div>
 
                             {% if not is_past %}
-                                <a href="{% url 'cancel_registration' registration.id %}"
-                                   class="btn btn-danger w-100"
+                                <a href="{% url 'cancel_registration' registration.id %}" class="btn btn-outline-danger w-100"
                                    onclick="return confirm('Отменить запись?')">
                                     Отменить запись
                                 </a>
@@ -173,130 +249,17 @@
     </div>
 </div>
 
-{% if organizer_other_events %}
-<div class="row mt-4">
-    <div class="col-md-8">
-        <details class="card">
-            <summary class="card-header bg-light d-flex justify-content-between align-items-center" style="cursor: pointer; list-style: none;">
-                <span>
-                    <a href="{% url 'organizer_profile' event.creator.id %}" class="text-decoration-none fw-semibold">
-                        Другие мероприятия организатора
-                    </a>
-                </span>
-                <span>▼</span>
-            </summary>
-            <div class="card-body">
-                <div class="list-group">
-                    {% for other_event in organizer_other_events %}
-                        <a href="{% url 'event_detail' other_event.id %}" class="list-group-item list-group-item-action">
-                            <strong>{{ other_event.title }}</strong><br>
-                            <small class="text-muted">{{ other_event.start_datetime|date:"d.m.Y H:i" }}</small>
-                        </a>
-                    {% endfor %}
-                </div>
-            </div>
-        </details>
-    </div>
-</div>
-{% endif %}
-
-{% if same_location_events %}
-<div class="row mt-4">
-    <div class="col-md-8">
-        <details class="card">
-            <summary class="card-header bg-light d-flex justify-content-between align-items-center" style="cursor: pointer; list-style: none;">
-                <span class="fw-semibold">Другие мероприятия на этой площадке</span>
-                <span>▼</span>
-            </summary>
-            <div class="card-body">
-                <div class="list-group">
-                    {% for location_event in same_location_events %}
-                        <a href="{% url 'event_detail' location_event.id %}" class="list-group-item list-group-item-action">
-                            <strong>{{ location_event.title }}</strong><br>
-                            <small class="text-muted">{{ location_event.start_datetime|date:"d.m.Y H:i" }}</small>
-                        </a>
-                    {% endfor %}
-                </div>
-            </div>
-        </details>
-    </div>
-</div>
-{% endif %}
-
-<!-- КОММЕНТАРИИ -->
-<div class="row mt-4">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header bg-secondary text-white">
-                <h5 class="mb-0">💬 Комментарии ({{ event.comments.count }})</h5>
-            </div>
-            <div class="card-body">
-                {% if user.is_authenticated %}
-                    <form method="post" action="{% url 'add_comment' event.id %}" class="mb-4">
-                        {% csrf_token %}
-                        <textarea name="text"
-                                  class="form-control mb-2"
-                                  rows="3"
-                                  placeholder="Напишите комментарий..."></textarea>
-                        <button type="submit" class="btn btn-primary">Отправить</button>
-                    </form>
-                {% else %}
-                    <p class="text-muted"><a href="{% url 'login' %}">Войдите</a>, чтобы оставить комментарий</p>
-                {% endif %}
-
-                {% for comment in event.comments.all %}
-                    <div class="border-bottom mb-3 pb-3" id="comment-{{ comment.id }}">
-                        <div class="d-flex justify-content-between">
-                            <strong>{{ comment.user.username }}</strong>
-                            <small class="text-muted">{{ comment.created_at|date:"d.m.Y H:i" }}</small>
-                        </div>
-                        <p class="mb-1">{{ comment.text|linebreaks }}</p>
-                        {% if user.is_authenticated and user == comment.user or user.is_superuser %}
-                            <a href="{% url 'delete_comment' comment.id %}"
-                               class="text-danger small"
-                               onclick="return confirm('Удалить комментарий?')">
-                                Удалить
-                            </a>
-                        {% endif %}
-                    </div>
-                {% empty %}
-                    <p class="text-muted">Пока нет комментариев. Будьте первым!</p>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- КАРТА -->
 {% if event.location %}
-<div class="row mt-4">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header bg-info text-white">
-                <h5 class="mb-0">📍 Место проведения</h5>
-            </div>
-            <div class="card-body">
-                <p><strong>Адрес:</strong> {{ event.location }}</p>
-                <div id="map" style="width: 100%; height: 400px; border-radius: 8px;"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
-<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
-
 <script>
     var map = L.map('map').setView([55.751574, 37.573856], 10);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    var address = "{{ event.location }}";
+    var address = "{{ event.location|escapejs }}";
 
     if (address) {
         fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`)
@@ -305,22 +268,11 @@
                 if (data && data.length > 0) {
                     var lat = data[0].lat;
                     var lon = data[0].lon;
-
                     map.setView([lat, lon], 15);
-
                     L.marker([lat, lon]).addTo(map)
-                        .bindPopup(`<strong>{{ event.title }}</strong><br>${address}`)
+                        .bindPopup(`<strong>{{ event.title|escapejs }}</strong><br>${address}`)
                         .openPopup();
-                } else {
-                    map.setView([55.751574, 37.573856], 10);
-                    L.popup()
-                        .setLatLng([55.751574, 37.573856])
-                        .setContent('Адрес не найден на карте')
-                        .openOn(map);
                 }
-            })
-            .catch(error => {
-                console.error('Ошибка геокодирования:', error);
             });
     }
 </script>
@@ -377,4 +329,10 @@
         });
     });
 </script>
+
+<style>
+    .detail-hero { background: linear-gradient(135deg, #2563eb, #7c3aed); }
+    .detail-cover { width: 100%; max-height: 420px; object-fit: cover; }
+    .comment-item:last-child { border-bottom: none !important; margin-bottom: 0 !important; padding-bottom: 0 !important; }
+</style>
 {% endblock %}

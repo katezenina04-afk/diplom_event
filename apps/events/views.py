@@ -8,7 +8,10 @@ from django.db.models import Q, Count
 from django.db import models
 import calendar
 import secrets
-from .models import Event, Category, Registration, Comment, Like, Review, Favorite, Notification, OrganizerSubscription
+from .models import (
+    Event, Category, Registration, Comment, Like, Review,
+    Favorite, Notification, OrganizerSubscription
+)
 from .forms import EventForm, CommentForm, ReviewForm
 from django.http import JsonResponse
 from accounts.models import User
@@ -91,15 +94,12 @@ def event_detail(request, pk):
     registration = None
     user_liked = False
     user_favorited = False
-    user_registered = False
-    user_registered_attended = False
     has_pending_invitation = False
     is_subscribed_to_organizer = False
 
     event.views_count += 1
     event.save(update_fields=['views_count'])
 
-    is_past = False
     if event.end_datetime:
         is_past = event.end_datetime < timezone.now()
     else:
@@ -108,11 +108,11 @@ def event_detail(request, pk):
     if request.user.is_authenticated:
         registration = Registration.objects.filter(event=event, user=request.user).first()
         is_registered = registration is not None
-        user_registered = registration is not None
-        user_registered_attended = registration is not None and registration.status == 'attended'
         user_liked = Like.objects.filter(event=event, user=request.user).exists()
         user_favorited = Favorite.objects.filter(event=event, user=request.user).exists()
-        has_pending_invitation = registration is not None and registration.status == 'pending' and registration.is_invited
+        has_pending_invitation = (
+            registration is not None and registration.status == 'pending' and registration.is_invited
+        )
 
         if request.user != event.creator:
             is_subscribed_to_organizer = OrganizerSubscription.objects.filter(
@@ -123,12 +123,12 @@ def event_detail(request, pk):
     organizer_other_events = Event.objects.filter(
         creator=event.creator,
         status='published'
-    ).exclude(pk=event.pk).order_by('start_datetime')[:4]
+    ).exclude(pk=event.pk).order_by('start_datetime')[:6]
 
     same_location_events = Event.objects.filter(
         status='published',
         location=event.location
-    ).exclude(pk=event.pk).order_by('start_datetime')[:4]
+    ).exclude(pk=event.pk).order_by('start_datetime')[:6]
 
     context = {
         'event': event,
@@ -136,8 +136,6 @@ def event_detail(request, pk):
         'registration': registration,
         'user_liked': user_liked,
         'user_favorited': user_favorited,
-        'user_registered': user_registered,
-        'user_registered_attended': user_registered_attended,
         'has_pending_invitation': has_pending_invitation,
         'is_past': is_past,
         'is_subscribed_to_organizer': is_subscribed_to_organizer,
@@ -501,8 +499,17 @@ def toggle_favorite(request, event_id):
 
 @login_required
 def favorites_list(request):
-    favorites = Favorite.objects.filter(user=request.user).select_related('event')
-    return render(request, 'events/favorites.html', {'favorites': favorites})
+    favorites = Favorite.objects.filter(user=request.user).select_related(
+        'event', 'event__category', 'event__creator'
+    )
+    favorite_organizers = OrganizerSubscription.objects.filter(
+        user=request.user
+    ).select_related('organizer')
+
+    return render(request, 'events/favorites.html', {
+        'favorites': favorites,
+        'favorite_organizers': favorite_organizers,
+    })
 
 @login_required
 def toggle_organizer_subscription(request, organizer_id):
@@ -820,3 +827,45 @@ def pending_events(request):
     events = Event.objects.filter(status='pending').order_by('-created_at')
     return render(request, 'events/pending_events.html', {'events': events})
 
+@login_required
+def toggle_organizer_subscription(request, organizer_id):
+    organizer = get_object_or_404(User, pk=organizer_id)
+
+    if organizer == request.user:
+        messages.warning(request, 'Нельзя добавить самого себя в избранные организаторы')
+        return redirect(request.META.get('HTTP_REFERER', 'event_list'))
+
+    subscription, created = OrganizerSubscription.objects.get_or_create(
+        user=request.user,
+        organizer=organizer
+    )
+
+    if not created:
+        subscription.delete()
+        messages.success(request, f'Организатор {organizer.username} удалён из избранного')
+    else:
+        messages.success(request, f'Организатор {organizer.username} добавлен в избранное')
+
+    return redirect(request.META.get('HTTP_REFERER', 'event_list'))
+
+def organizer_profile(request, organizer_id):
+    organizer = get_object_or_404(User, pk=organizer_id)
+
+    events = Event.objects.filter(
+        creator=organizer,
+        status='published'
+    ).order_by('start_datetime')
+
+    is_subscribed = False
+    if request.user.is_authenticated and request.user != organizer:
+        is_subscribed = OrganizerSubscription.objects.filter(
+            user=request.user,
+            organizer=organizer
+        ).exists()
+
+    context = {
+        'organizer': organizer,
+        'events': events,
+        'is_subscribed': is_subscribed,
+    }
+    return render(request, 'events/organizer_profile.html', context)

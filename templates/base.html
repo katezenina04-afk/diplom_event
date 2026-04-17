@@ -223,32 +223,27 @@
 
     <footer class="footer-modern text-white py-5">
         <div class="container">
-            <div class="row">
-                <div class="col-md-4 mb-4">
-                    <h5 class="fw-bold">Афиша мероприятий</h5>
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <h5 class="fw-bold">О нас</h5>
                     <p class="small text-white-50 mb-0">
-                        Платформа для поиска и организации мероприятий. Пользователи могут находить события, подписываться на организаторов и получать персональные рекомендации.
+                        Платформа предназначена для поиска, организации и сопровождения мероприятий.
+                        Пользователи могут находить события, добавлять их в избранное, подписываться на организаторов
+                        и получать персональные рекомендации.
                     </p>
                 </div>
 
-                <div class="col-md-4 mb-4">
-                    <h5 class="fw-bold">Разделы</h5>
-                    <ul class="list-unstyled">
-                        <li><a href="{% url 'event_list' %}" class="footer-link">Афиша</a></li>
-                        <li><a href="{% url 'event_calendar' %}" class="footer-link">Календарь</a></li>
-                        <li><a href="{% url 'events_map' %}" class="footer-link">Карта мероприятий</a></li>
+                <div class="col-md-6">
+                    <h5 class="fw-bold">Контакты</h5>
+                    <ul class="list-unstyled small text-white-50 mb-0">
+                        <li class="mb-2"><i class="bi bi-envelope me-2"></i>support@afisha.local</li>
+                        <li class="mb-2"><i class="bi bi-telephone me-2"></i>+7 (900) 000-00-00</li>
+                        <li><i class="bi bi-geo-alt me-2"></i>Россия, Улан-Удэ</li>
                     </ul>
-                </div>
-
-                <div class="col-md-4 mb-4">
-                    <h5 class="fw-bold">О проекте</h5>
-                    <p class="small text-white-50">
-                        Система объединяет инструменты для участников и организаторов: публикацию мероприятий, регистрацию, подписки, аналитику и рекомендации.
-                    </p>
                 </div>
             </div>
 
-            <hr class="border-secondary">
+            <hr class="border-secondary my-4">
 
             <div class="text-center small text-white-50">
                 &copy; 2026 Афиша мероприятий. Все права защищены.

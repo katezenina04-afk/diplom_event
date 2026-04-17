@@ -3,107 +3,104 @@
 {% block title %}Отчёт по организаторам{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h1 class="mb-3">📊 Отчёт по организаторам</h1>
-    <p class="text-muted">Отчёт содержит сведения об организаторах мероприятий и активности по созданным ими событиям.</p>
-
-    <!-- Фильтры -->
-    <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">Фильтрация отчёта</h5>
-        </div>
-        <div class="card-body">
-            <form method="get" class="row g-3">
-                <div class="col-md-3">
-                    <label class="form-label">Дата от</label>
-                    <input type="date" name="date_from" class="form-control" value="{{ date_from }}">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Дата до</label>
-                    <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Организатор</label>
-                    <select name="organizer" class="form-select">
-                        <option value="">Все</option>
-                        {% for org in organizers %}
-                            <option value="{{ org.id }}" {% if selected_organizer == org.id|stringformat:"s" %}selected{% endif %}>
-                                {{ org.username }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-3 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary">Применить</button>
-                    <a href="{% url 'organizer_report' %}" class="btn btn-secondary ms-2">Сбросить</a>
-                </div>
-            </form>
-        </div>
+<section class="mb-4">
+    <div class="org-report-hero rounded-4 p-4 p-lg-5 text-white">
+        <h1 class="display-6 fw-bold mb-3">Отчёт по организаторам</h1>
+        <p class="lead mb-0">Отчёт содержит сведения об организаторах и активности по созданным ими мероприятиям.</p>
     </div>
+</section>
 
-    <!-- Сводка -->
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card text-white bg-primary">
-                <div class="card-body text-center">
-                    <h5 class="card-title">Всего организаторов</h5>
-                    <p class="display-6">{{ total_organizers }}</p>
-                </div>
+<div class="card shadow-sm border-0 rounded-4 mb-4">
+    <div class="card-body p-4">
+        <h2 class="h5 fw-bold mb-3">Фильтрация</h2>
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Дата от</label>
+                <input type="date" name="date_from" class="form-control" value="{{ date_from }}">
             </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card text-white bg-success">
-                <div class="card-body text-center">
-                    <h5 class="card-title">Всего мероприятий</h5>
-                    <p class="display-6">{{ total_events }}</p>
-                </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Дата до</label>
+                <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
             </div>
-        </div>
-    </div>
-
-    <!-- Таблица -->
-    <div class="card">
-        <div class="card-header bg-secondary text-white">
-            <h5 class="mb-0">Таблица отчёта по организаторам</h5>
-        </div>
-        <div class="card-body">
-            {% if data %}
-                <div class="table-responsive">
-                    <table class="table table-bordered table-hover align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Организатор</th>
-                                <th>Email</th>
-                                <th>Количество мероприятий</th>
-                                <th>Количество участников</th>
-                                <th>Количество лайков</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for item in data %}
-                            <tr>
-                                <td>{{ item.user.username }}</td>
-                                <td>{{ item.user.email }}</td>
-                                <td>{{ item.events_count }}</td>
-                                <td>{{ item.total_participants }}</td>
-                                <td>{{ item.total_likes }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="alert alert-info mb-0">
-                    По выбранным условиям данные не найдены.
-                </div>
-            {% endif %}
-        </div>
-    </div>
-
-    <div class="mt-3">
-        <a href="{% url 'export_organizers_excel' %}?{{ request.GET.urlencode }}" class="btn btn-success">
-            📥 Экспорт в Excel
-        </a>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">Организатор</label>
+                <select name="organizer" class="form-select">
+                    <option value="">Все</option>
+                    {% for org in organizers %}
+                        <option value="{{ org.id }}" {% if selected_organizer == org.id|stringformat:"s" %}selected{% endif %}>
+                            {{ org.username }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">Применить</button>
+            </div>
+        </form>
     </div>
 </div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-body p-4 text-center">
+                <div class="small text-muted">Всего организаторов</div>
+                <div class="display-6 fw-bold">{{ total_organizers }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-body p-4 text-center">
+                <div class="small text-muted">Всего мероприятий</div>
+                <div class="display-6 fw-bold">{{ total_events }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 rounded-4">
+    <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <h2 class="h5 fw-bold mb-0">Таблица отчёта</h2>
+            <a href="{% url 'export_organizers_excel' %}?{{ request.GET.urlencode }}" class="btn btn-success">
+                <i class="bi bi-file-earmark-excel"></i> Экспорт в Excel
+            </a>
+        </div>
+
+        {% if data %}
+            <div class="table-responsive">
+                <table class="table align-middle table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Организатор</th>
+                            <th>Email</th>
+                            <th>Мероприятий</th>
+                            <th>Участников</th>
+                            <th>Лайков</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in data %}
+                        <tr>
+                            <td class="fw-semibold">{{ item.user.username }}</td>
+                            <td>{{ item.user.email }}</td>
+                            <td>{{ item.events_count }}</td>
+                            <td>{{ item.total_participants }}</td>
+                            <td>{{ item.total_likes }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info rounded-4 mb-0">По выбранным условиям данные не найдены.</div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .org-report-hero { background: linear-gradient(135deg, #2563eb, #4f46e5); }
+    .table thead th { color: #6b7280; font-weight: 700; }
+</style>
 {% endblock %}

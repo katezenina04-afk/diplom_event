@@ -32,5 +32,7 @@ urlpatterns = [
     path('map/', views.events_map, name='events_map'),
     path('moderate/<int:event_id>/', views.moderate_event, name='moderate_event'),
     path('pending/', views.pending_events, name='pending_events'),
+    path('organizer/<int:organizer_id>/', views.organizer_profile, name='organizer_profile'),
+    path('organizer/<int:organizer_id>/favorite/', views.toggle_organizer_subscription, name='toggle_organizer_subscription'),
     #path('confirm-assignment/<int:assignment_id>/', views.confirm_assignment, name='confirm_assignment'),
 ]
