@@ -12,6 +12,9 @@ import openpyxl
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
 from django.http import HttpResponse
+from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+from events.models import OrganizerSubscription
 
 def style_excel_sheet(ws, title, headers, filter_data=None):
     """
@@ -447,3 +450,55 @@ def export_organizers_excel(request):
     response['Content-Disposition'] = 'attachment; filename=organizers_report.xlsx'
     wb.save(response)
     return response
+
+@login_required
+def my_organizer_report(request):
+    events = Event.objects.filter(creator=request.user).order_by('-start_datetime')
+
+    total_events = events.count()
+    published_events = events.filter(status='published').count()
+    pending_events = events.filter(status='pending').count()
+    rejected_events = events.filter(status='rejected').count()
+
+    total_participants = Registration.objects.filter(
+        event__in=events,
+        status='confirmed',
+        is_invited=False
+    ).count()
+
+    total_likes = Like.objects.filter(event__in=events).count()
+    total_favorites = Favorite.objects.filter(event__in=events).count()
+    total_comments = Comment.objects.filter(event__in=events).count()
+
+    context = {
+        'events': events[:10],
+        'total_events': total_events,
+        'published_events': published_events,
+        'pending_events': pending_events,
+        'rejected_events': rejected_events,
+        'total_participants': total_participants,
+        'total_likes': total_likes,
+        'total_favorites': total_favorites,
+        'total_comments': total_comments,
+    }
+    return render(request, 'reports/my_organizer_report.html', context)
+
+
+@login_required
+def my_participant_report(request):
+    registrations = Registration.objects.filter(user=request.user).select_related('event').order_by('-created_at')
+    upcoming_registrations = registrations.filter(event__start_datetime__gte=timezone.now())
+    attended_count = registrations.filter(status='attended').count()
+
+    favorite_events = Favorite.objects.filter(user=request.user).count()
+    favorite_organizers = OrganizerSubscription.objects.filter(user=request.user).count()
+
+    context = {
+        'registrations': registrations[:10],
+        'upcoming_registrations': upcoming_registrations[:5],
+        'total_registrations': registrations.count(),
+        'attended_count': attended_count,
+        'favorite_events': favorite_events,
+        'favorite_organizers': favorite_organizers,
+    }
+    return render(request, 'reports/my_participant_report.html', context)

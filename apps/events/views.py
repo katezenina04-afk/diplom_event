@@ -37,7 +37,8 @@ def event_list(request):
         events = events.filter(
             Q(title__icontains=q) |
             Q(description__icontains=q) |
-            Q(location__icontains=q)
+            Q(location__icontains=q) |
+            Q(venue_name__icontains=q)
         )
     
     date_filter = request.GET.get('date', '')

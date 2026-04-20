@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Мой отчет участника{% endblock %}
+
+{% block content %}
+<section class="mb-4">
+    <div class="rounded-4 p-4 p-lg-5 text-white" style="background:linear-gradient(135deg,#0f766e,#2563eb);">
+        <h1 class="display-6 fw-bold mb-3">Мой отчет участника</h1>
+        <p class="lead mb-0">Сводка по вашим записям, посещениям и сохраненным интересам.</p>
+    </div>
+</section>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-3"><div class="card shadow-sm border-0 rounded-4"><div class="card-body text-center"><div class="small text-muted">Всего записей</div><div class="display-6 fw-bold">{{ total_registrations }}</div></div></div></div>
+    <div class="col-md-3"><div class="card shadow-sm border-0 rounded-4"><div class="card-body text-center"><div class="small text-muted">Посещено</div><div class="display-6 fw-bold">{{ attended_count }}</div></div></div></div>
+    <div class="col-md-3"><div class="card shadow-sm border-0 rounded-4"><div class="card-body text-center"><div class="small text-muted">Избранные события</div><div class="display-6 fw-bold">{{ favorite_events }}</div></div></div></div>
+    <div class="col-md-3"><div class="card shadow-sm border-0 rounded-4"><div class="card-body text-center"><div class="small text-muted">Избранные организаторы</div><div class="display-6 fw-bold">{{ favorite_organizers }}</div></div></div></div>
+</div>
+
+<div class="card shadow-sm border-0 rounded-4 mb-4">
+    <div class="card-body p-4">
+        <h2 class="h5 fw-bold mb-3">Ближайшие записи</h2>
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Мероприятие</th>
+                        <th>Дата</th>
+                        <th>Код входа</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reg in upcoming_registrations %}
+                    <tr>
+                        <td class="fw-semibold">{{ reg.event.title }}</td>
+                        <td>{{ reg.event.start_datetime|date:"d.m.Y H:i" }}</td>
+                        <td><code>{{ reg.entry_code }}</code></td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="3" class="text-muted">Нет ближайших мероприятий.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

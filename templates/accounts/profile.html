@@ -93,6 +93,10 @@
                     <a href="{% url 'my_registrations' %}" class="btn btn-outline-secondary">Мои записи</a>
                     <a href="{% url 'favorites_list' %}" class="btn btn-outline-warning">Избранное</a>
                     <a href="{% url 'recommendations' %}" class="btn btn-outline-success">Рекомендации</a>
+                    {% if user.created_events.exists %}
+                        <a href="{% url 'my_organizer_report' %}" class="btn btn-outline-dark">Мой отчет организатора</a>
+                    {% endif %}
+                    <a href="{% url 'my_participant_report' %}" class="btn btn-outline-info">Мой отчет участника</a>
                 </div>
             </div>
         </div>
