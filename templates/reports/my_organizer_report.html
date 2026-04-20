@@ -4,52 +4,104 @@
 
 {% block content %}
 <section class="mb-4">
-    <div class="rounded-4 p-4 p-lg-5 text-white" style="background:linear-gradient(135deg,#2563eb,#4f46e5);">
+    <div class="org-report-hero rounded-4 p-4 p-lg-5 text-white">
         <h1 class="display-6 fw-bold mb-3">Мой отчет организатора</h1>
-        <p class="lead mb-0">Сводная статистика по вашим мероприятиям и активности пользователей.</p>
+        <p class="lead mb-0">Отчет содержит сведения по вашим мероприятиям, активности участников и пользовательскому интересу.</p>
     </div>
 </section>
 
-<div class="row g-4 mb-4">
-    <div class="col-md-3"><div class="card shadow-sm border-0 rounded-4"><div class="card-body text-center"><div class="small text-muted">Всего мероприятий</div><div class="display-6 fw-bold">{{ total_events }}</div></div></div></div>
-    <div class="col-md-3"><div class="card shadow-sm border-0 rounded-4"><div class="card-body text-center"><div class="small text-muted">Опубликовано</div><div class="display-6 fw-bold">{{ published_events }}</div></div></div></div>
-    <div class="col-md-3"><div class="card shadow-sm border-0 rounded-4"><div class="card-body text-center"><div class="small text-muted">Участников</div><div class="display-6 fw-bold">{{ total_participants }}</div></div></div></div>
-    <div class="col-md-3"><div class="card shadow-sm border-0 rounded-4"><div class="card-body text-center"><div class="small text-muted">Лайков</div><div class="display-6 fw-bold">{{ total_likes }}</div></div></div></div>
+<div class="card shadow-sm border-0 rounded-4 mb-4">
+    <div class="card-body p-4">
+        <h2 class="h5 fw-bold mb-3">Фильтрация</h2>
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">Дата от</label>
+                <input type="date" name="date_from" class="form-control" value="{{ date_from }}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">Дата до</label>
+                <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">Статус</label>
+                <select name="status" class="form-select">
+                    <option value="">Все</option>
+                    {% for value, label in status_choices %}
+                        <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">Применить</button>
+                <a href="{% url 'my_organizer_report' %}" class="btn btn-outline-secondary ms-2">Сбросить</a>
+            </div>
+        </form>
+    </div>
 </div>
 
 <div class="row g-4 mb-4">
-    <div class="col-md-4"><div class="card shadow-sm border-0 rounded-4"><div class="card-body text-center"><div class="small text-muted">В избранном</div><div class="display-6 fw-bold">{{ total_favorites }}</div></div></div></div>
-    <div class="col-md-4"><div class="card shadow-sm border-0 rounded-4"><div class="card-body text-center"><div class="small text-muted">Комментариев</div><div class="display-6 fw-bold">{{ total_comments }}</div></div></div></div>
-    <div class="col-md-4"><div class="card shadow-sm border-0 rounded-4"><div class="card-body text-center"><div class="small text-muted">На модерации / отклонено</div><div class="display-6 fw-bold">{{ pending_events }} / {{ rejected_events }}</div></div></div></div>
+    <div class="col-md-3"><div class="card shadow-sm border-0 rounded-4"><div class="card-body text-center p-4"><div class="small text-muted">Всего мероприятий</div><div class="display-6 fw-bold">{{ total_events }}</div></div></div></div>
+    <div class="col-md-3"><div class="card shadow-sm border-0 rounded-4"><div class="card-body text-center p-4"><div class="small text-muted">Опубликовано</div><div class="display-6 fw-bold">{{ published_events }}</div></div></div></div>
+    <div class="col-md-3"><div class="card shadow-sm border-0 rounded-4"><div class="card-body text-center p-4"><div class="small text-muted">Участников</div><div class="display-6 fw-bold">{{ total_participants }}</div></div></div></div>
+    <div class="col-md-3"><div class="card shadow-sm border-0 rounded-4"><div class="card-body text-center p-4"><div class="small text-muted">Лайков</div><div class="display-6 fw-bold">{{ total_likes }}</div></div></div></div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-4"><div class="card shadow-sm border-0 rounded-4"><div class="card-body text-center p-4"><div class="small text-muted">В избранном</div><div class="display-6 fw-bold">{{ total_favorites }}</div></div></div></div>
+    <div class="col-md-4"><div class="card shadow-sm border-0 rounded-4"><div class="card-body text-center p-4"><div class="small text-muted">Комментариев</div><div class="display-6 fw-bold">{{ total_comments }}</div></div></div></div>
+    <div class="col-md-4"><div class="card shadow-sm border-0 rounded-4"><div class="card-body text-center p-4"><div class="small text-muted">На модерации / отклонено</div><div class="display-6 fw-bold">{{ pending_events }} / {{ rejected_events }}</div></div></div></div>
 </div>
 
 <div class="card shadow-sm border-0 rounded-4">
     <div class="card-body p-4">
-        <h2 class="h5 fw-bold mb-3">Последние мероприятия</h2>
-        <div class="table-responsive">
-            <table class="table align-middle mb-0">
-                <thead>
-                    <tr>
-                        <th>Название</th>
-                        <th>Дата</th>
-                        <th>Статус</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for event in events %}
-                    <tr>
-                        <td class="fw-semibold">{{ event.title }}</td>
-                        <td>{{ event.start_datetime|date:"d.m.Y H:i" }}</td>
-                        <td>{{ event.get_status_display }}</td>
-                        <td><a href="{% url 'event_detail' event.id %}" class="btn btn-sm btn-outline-primary">Открыть</a></td>
-                    </tr>
-                    {% empty %}
-                    <tr><td colspan="4" class="text-muted">Мероприятий пока нет.</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <h2 class="h5 fw-bold mb-0">Таблица отчёта</h2>
+            <a href="{% url 'export_my_organizer_excel' %}?{{ request.GET.urlencode }}" class="btn btn-success">
+                <i class="bi bi-file-earmark-excel"></i> Экспорт в Excel
+            </a>
         </div>
+
+        {% if data %}
+            <div class="table-responsive">
+                <table class="table align-middle table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Название</th>
+                            <th>Дата</th>
+                            <th>Категория</th>
+                            <th>Статус</th>
+                            <th>Участников</th>
+                            <th>Лайков</th>
+                            <th>В избранном</th>
+                            <th>Комментариев</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in data %}
+                        <tr>
+                            <td class="fw-semibold">{{ item.event.title }}</td>
+                            <td>{{ item.event.start_datetime|date:"d.m.Y H:i" }}</td>
+                            <td>{{ item.event.category.name|default:"—" }}</td>
+                            <td>{{ item.event.get_status_display }}</td>
+                            <td>{{ item.participants }}</td>
+                            <td>{{ item.likes }}</td>
+                            <td>{{ item.favorites }}</td>
+                            <td>{{ item.comments }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info rounded-4 mb-0">По выбранным условиям данные не найдены.</div>
+        {% endif %}
     </div>
 </div>
+
+<style>
+    .org-report-hero { background: linear-gradient(135deg, #2563eb, #4f46e5); }
+    .table thead th { color: #6b7280; font-weight: 700; }
+</style>
 {% endblock %}

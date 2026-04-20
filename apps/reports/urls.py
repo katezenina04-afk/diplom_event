@@ -13,4 +13,6 @@ urlpatterns = [
     path('export/events/', views.export_events_excel, name='export_events_excel'),
     path('export/specialists/', views.export_specialists_excel, name='export_specialists_excel'),
     path('export/organizers/', views.export_organizers_excel, name='export_organizers_excel'),
+    path('export/my-organizer/', views.export_my_organizer_excel, name='export_my_organizer_excel'),
+    path('export/my-participant/', views.export_my_participant_excel, name='export_my_participant_excel'),
 ]

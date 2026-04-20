@@ -137,7 +137,12 @@
                 <p class="mb-2"><strong>Место:</strong><br>{{ event.location }}</p>
 
                 {% if event.venue_name %}
-                    <p class="mb-2"><strong>Площадка:</strong><br>{{ event.venue_name }}</p>
+                    <p class="mb-2">
+                        <strong>Площадка:</strong><br>
+                        <a href="{% url 'event_list' %}?venue={{ event.venue_name|urlencode }}" class="text-decoration-none fw-semibold"></a>
+                            {{ event.venue_name }}
+                        </a>
+                    </p>
                 {% endif %}
 
                 <p class="mb-2">

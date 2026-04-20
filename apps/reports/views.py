@@ -194,7 +194,7 @@ def events_report(request):
 @staff_member_required
 def participants_report(request):
     """Отчёт по участникам"""
-    participants = User.objects.filter(event_registrations__isnull=True).distinct()
+    participants = User.objects.filter(event_registrations__isnull=False).distinct()
     
     data = []
     for user in participants:
@@ -453,25 +453,54 @@ def export_organizers_excel(request):
 
 @login_required
 def my_organizer_report(request):
-    events = Event.objects.filter(creator=request.user).order_by('-start_datetime')
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+    status = request.GET.get('status')
+
+    events = Event.objects.filter(
+        creator=request.user
+    ).select_related('category').order_by('-start_datetime')
+
+    if date_from:
+        events = events.filter(start_datetime__date__gte=date_from)
+    if date_to:
+        events = events.filter(start_datetime__date__lte=date_to)
+    if status:
+        events = events.filter(status=status)
 
     total_events = events.count()
+
     published_events = events.filter(status='published').count()
     pending_events = events.filter(status='pending').count()
     rejected_events = events.filter(status='rejected').count()
 
-    total_participants = Registration.objects.filter(
-        event__in=events,
-        status='confirmed',
-        is_invited=False
-    ).count()
+    data = []
+    total_participants = 0
+    total_likes = 0
+    total_favorites = 0
+    total_comments = 0
 
-    total_likes = Like.objects.filter(event__in=events).count()
-    total_favorites = Favorite.objects.filter(event__in=events).count()
-    total_comments = Comment.objects.filter(event__in=events).count()
+    for event in events:
+        participants = Registration.objects.filter(event=event, is_invited=False).count()
+        likes = Like.objects.filter(event=event).count()
+        favorites = Favorite.objects.filter(event=event).count()
+        comments = Comment.objects.filter(event=event).count()
+
+        total_participants += participants
+        total_likes += likes
+        total_favorites += favorites
+        total_comments += comments
+
+        data.append({
+            'event': event,
+            'participants': participants,
+            'likes': likes,
+            'favorites': favorites,
+            'comments': comments,
+        })
 
     context = {
-        'events': events[:10],
+        'data': data,
         'total_events': total_events,
         'published_events': published_events,
         'pending_events': pending_events,
@@ -480,25 +509,213 @@ def my_organizer_report(request):
         'total_likes': total_likes,
         'total_favorites': total_favorites,
         'total_comments': total_comments,
+        'date_from': date_from,
+        'date_to': date_to,
+        'selected_status': status,
+        'status_choices': Event.STATUS_CHOICES if hasattr(Event, 'STATUS_CHOICES') else [],
     }
     return render(request, 'reports/my_organizer_report.html', context)
 
 
 @login_required
 def my_participant_report(request):
-    registrations = Registration.objects.filter(user=request.user).select_related('event').order_by('-created_at')
-    upcoming_registrations = registrations.filter(event__start_datetime__gte=timezone.now())
-    attended_count = registrations.filter(status='attended').count()
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+    status = request.GET.get('status')
 
+    registrations = Registration.objects.filter(
+        user=request.user
+    ).select_related('event', 'event__category').order_by('-created_at')
+
+    if date_from:
+        registrations = registrations.filter(event__start_datetime__date__gte=date_from)
+    if date_to:
+        registrations = registrations.filter(event__start_datetime__date__lte=date_to)
+    if status:
+        registrations = registrations.filter(status=status)
+
+    total_registrations = registrations.count()
+    attended_count = registrations.filter(status='attended').count()
     favorite_events = Favorite.objects.filter(user=request.user).count()
     favorite_organizers = OrganizerSubscription.objects.filter(user=request.user).count()
 
     context = {
-        'registrations': registrations[:10],
-        'upcoming_registrations': upcoming_registrations[:5],
-        'total_registrations': registrations.count(),
+        'registrations': registrations,
+        'total_registrations': total_registrations,
         'attended_count': attended_count,
         'favorite_events': favorite_events,
         'favorite_organizers': favorite_organizers,
+        'date_from': date_from,
+        'date_to': date_to,
+        'selected_status': status,
+        'status_choices': Registration.STATUS_CHOICES if hasattr(Registration, 'STATUS_CHOICES') else [],
     }
     return render(request, 'reports/my_participant_report.html', context)
+
+@login_required
+def export_my_organizer_excel(request):
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+    status = request.GET.get('status')
+
+    events = Event.objects.filter(creator=request.user).select_related('category').order_by('-start_datetime')
+
+    if date_from:
+        events = events.filter(start_datetime__date__gte=date_from)
+    if date_to:
+        events = events.filter(start_datetime__date__lte=date_to)
+    if status:
+        events = events.filter(status=status)
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Мой отчет организатора"
+
+    headers = [
+        'Название',
+        'Дата',
+        'Категория',
+        'Статус',
+        'Участников',
+        'Лайков',
+        'В избранном',
+        'Комментариев'
+    ]
+
+    status_name = status or 'Все'
+
+    start_row = style_excel_sheet(
+        ws,
+        title='Мой отчет организатора',
+        headers=headers,
+        filter_data=[
+            ('Дата от', date_from or '—'),
+            ('Дата до', date_to or '—'),
+            ('Статус', status_name),
+        ]
+    )
+
+    thin = Side(border_style='thin', color='000000')
+    row_num = start_row
+
+    for event in events:
+        participants = Registration.objects.filter(event=event, is_invited=False).count()
+        likes = Like.objects.filter(event=event).count()
+        favorites = Favorite.objects.filter(event=event).count()
+        comments = Comment.objects.filter(event=event).count()
+
+        values = [
+            event.title,
+            event.start_datetime.strftime('%d.%m.%Y %H:%M') if event.start_datetime else '',
+            event.category.name if event.category else '—',
+            event.get_status_display(),
+            participants,
+            likes,
+            favorites,
+            comments,
+        ]
+
+        for col_num, value in enumerate(values, 1):
+            cell = ws.cell(row=row_num, column=col_num, value=value)
+            cell.border = Border(left=thin, right=thin, top=thin, bottom=thin)
+            if col_num >= 4:
+                cell.alignment = Alignment(horizontal='center')
+
+        row_num += 1
+
+    for col_num in range(1, len(headers) + 1):
+        max_length = 0
+        column_letter = get_column_letter(col_num)
+        for row in range(1, ws.max_row + 1):
+            cell = ws.cell(row=row, column=col_num)
+            if cell.value is not None:
+                max_length = max(max_length, len(str(cell.value)))
+        ws.column_dimensions[column_letter].width = max_length + 3
+
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = 'attachment; filename=my_organizer_report.xlsx'
+    wb.save(response)
+    return response
+
+
+@login_required
+def export_my_participant_excel(request):
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+    status = request.GET.get('status')
+
+    registrations = Registration.objects.filter(
+        user=request.user
+    ).select_related('event', 'event__category').order_by('-created_at')
+
+    if date_from:
+        registrations = registrations.filter(event__start_datetime__date__gte=date_from)
+    if date_to:
+        registrations = registrations.filter(event__start_datetime__date__lte=date_to)
+    if status:
+        registrations = registrations.filter(status=status)
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Мой отчет участника"
+
+    headers = [
+        'Мероприятие',
+        'Дата',
+        'Место',
+        'Категория',
+        'Статус',
+        'Код входа'
+    ]
+
+    status_name = status or 'Все'
+
+    start_row = style_excel_sheet(
+        ws,
+        title='Мой отчет участника',
+        headers=headers,
+        filter_data=[
+            ('Дата от', date_from or '—'),
+            ('Дата до', date_to or '—'),
+            ('Статус', status_name),
+        ]
+    )
+
+    thin = Side(border_style='thin', color='000000')
+    row_num = start_row
+
+    for reg in registrations:
+        values = [
+            reg.event.title,
+            reg.event.start_datetime.strftime('%d.%m.%Y %H:%M') if reg.event.start_datetime else '',
+            reg.event.location,
+            reg.event.category.name if reg.event.category else '—',
+            reg.get_status_display(),
+            reg.entry_code,
+        ]
+
+        for col_num, value in enumerate(values, 1):
+            cell = ws.cell(row=row_num, column=col_num, value=value)
+            cell.border = Border(left=thin, right=thin, top=thin, bottom=thin)
+            if col_num >= 5:
+                cell.alignment = Alignment(horizontal='center')
+
+        row_num += 1
+
+    for col_num in range(1, len(headers) + 1):
+        max_length = 0
+        column_letter = get_column_letter(col_num)
+        for row in range(1, ws.max_row + 1):
+            cell = ws.cell(row=row, column=col_num)
+            if cell.value is not None:
+                max_length = max(max_length, len(str(cell.value)))
+        ws.column_dimensions[column_letter].width = max_length + 3
+
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = 'attachment; filename=my_participant_report.xlsx'
+    wb.save(response)
+    return response

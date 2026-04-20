@@ -59,6 +59,12 @@ def event_list(request):
     if category_id:
         events = events.filter(category_id=category_id)
     
+    venue = request.GET.get('venue', '').strip()
+    if venue:
+        events = events.filter(
+            Q(venue_name__icontains=venue) |
+            Q(location__icontains=venue)
+        )
     sort = request.GET.get('sort', 'date_asc')
     
     if sort == 'date_asc':
@@ -82,6 +88,7 @@ def event_list(request):
         'events': page_obj,
         'categories': categories,
         'q': q,
+        'venue': venue,
         'date_filter': date_filter,
         'selected_category': int(category_id) if category_id else None,
         'sort': sort,
@@ -126,10 +133,16 @@ def event_detail(request, pk):
         status='published'
     ).exclude(pk=event.pk).order_by('start_datetime')[:6]
 
-    same_location_events = Event.objects.filter(
-        status='published',
-        location=event.location
-    ).exclude(pk=event.pk).order_by('start_datetime')[:6]
+    if getattr(event, 'venue_name', None):
+        same_location_events = Event.objects.filter(
+            status='published',
+            venue_name=event.venue_name
+        ).exclude(pk=event.pk).order_by('start_datetime')[:6]
+    else:
+        same_location_events = Event.objects.filter(
+            status='published',
+            location=event.location
+        ).exclude(pk=event.pk).order_by('start_datetime')[:6]
 
     context = {
         'event': event,

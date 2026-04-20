@@ -4,44 +4,94 @@
 
 {% block content %}
 <section class="mb-4">
-    <div class="rounded-4 p-4 p-lg-5 text-white" style="background:linear-gradient(135deg,#0f766e,#2563eb);">
+    <div class="events-report-hero rounded-4 p-4 p-lg-5 text-white">
         <h1 class="display-6 fw-bold mb-3">Мой отчет участника</h1>
-        <p class="lead mb-0">Сводка по вашим записям, посещениям и сохраненным интересам.</p>
+        <p class="lead mb-0">Отчет содержит сведения о ваших записях, посещениях и сохраненных интересах.</p>
     </div>
 </section>
 
-<div class="row g-4 mb-4">
-    <div class="col-md-3"><div class="card shadow-sm border-0 rounded-4"><div class="card-body text-center"><div class="small text-muted">Всего записей</div><div class="display-6 fw-bold">{{ total_registrations }}</div></div></div></div>
-    <div class="col-md-3"><div class="card shadow-sm border-0 rounded-4"><div class="card-body text-center"><div class="small text-muted">Посещено</div><div class="display-6 fw-bold">{{ attended_count }}</div></div></div></div>
-    <div class="col-md-3"><div class="card shadow-sm border-0 rounded-4"><div class="card-body text-center"><div class="small text-muted">Избранные события</div><div class="display-6 fw-bold">{{ favorite_events }}</div></div></div></div>
-    <div class="col-md-3"><div class="card shadow-sm border-0 rounded-4"><div class="card-body text-center"><div class="small text-muted">Избранные организаторы</div><div class="display-6 fw-bold">{{ favorite_organizers }}</div></div></div></div>
-</div>
-
 <div class="card shadow-sm border-0 rounded-4 mb-4">
     <div class="card-body p-4">
-        <h2 class="h5 fw-bold mb-3">Ближайшие записи</h2>
-        <div class="table-responsive">
-            <table class="table align-middle mb-0">
-                <thead>
-                    <tr>
-                        <th>Мероприятие</th>
-                        <th>Дата</th>
-                        <th>Код входа</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for reg in upcoming_registrations %}
-                    <tr>
-                        <td class="fw-semibold">{{ reg.event.title }}</td>
-                        <td>{{ reg.event.start_datetime|date:"d.m.Y H:i" }}</td>
-                        <td><code>{{ reg.entry_code }}</code></td>
-                    </tr>
-                    {% empty %}
-                    <tr><td colspan="3" class="text-muted">Нет ближайших мероприятий.</td></tr>
+        <h2 class="h5 fw-bold mb-3">Фильтрация</h2>
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">Дата от</label>
+                <input type="date" name="date_from" class="form-control" value="{{ date_from }}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">Дата до</label>
+                <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">Статус</label>
+                <select name="status" class="form-select">
+                    <option value="">Все</option>
+                    {% for value, label in status_choices %}
+                        <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
                     {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                </select>
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-success">Применить</button>
+                <a href="{% url 'my_participant_report' %}" class="btn btn-outline-secondary ms-2">Сбросить</a>
+            </div>
+        </form>
     </div>
 </div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-3"><div class="card shadow-sm border-0 rounded-4"><div class="card-body text-center p-4"><div class="small text-muted">Всего записей</div><div class="display-6 fw-bold">{{ total_registrations }}</div></div></div></div>
+    <div class="col-md-3"><div class="card shadow-sm border-0 rounded-4"><div class="card-body text-center p-4"><div class="small text-muted">Посещено</div><div class="display-6 fw-bold">{{ attended_count }}</div></div></div></div>
+    <div class="col-md-3"><div class="card shadow-sm border-0 rounded-4"><div class="card-body text-center p-4"><div class="small text-muted">Избранные события</div><div class="display-6 fw-bold">{{ favorite_events }}</div></div></div></div>
+    <div class="col-md-3"><div class="card shadow-sm border-0 rounded-4"><div class="card-body text-center p-4"><div class="small text-muted">Избранные организаторы</div><div class="display-6 fw-bold">{{ favorite_organizers }}</div></div></div></div>
+</div>
+
+<div class="card shadow-sm border-0 rounded-4">
+    <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <h2 class="h5 fw-bold mb-0">Таблица отчёта</h2>
+            <a href="{% url 'export_my_participant_excel' %}?{{ request.GET.urlencode }}" class="btn btn-success">
+                <i class="bi bi-file-earmark-excel"></i> Экспорт в Excel
+            </a>
+        </div>
+
+        {% if registrations %}
+            <div class="table-responsive">
+                <table class="table align-middle table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Мероприятие</th>
+                            <th>Дата</th>
+                            <th>Место</th>
+                            <th>Категория</th>
+                            <th>Статус</th>
+                            <th>Код входа</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for reg in registrations %}
+                        <tr>
+                            <td class="fw-semibold">{{ reg.event.title }}</td>
+                            <td>{{ reg.event.start_datetime|date:"d.m.Y H:i" }}</td>
+                            <td>{{ reg.event.location }}</td>
+                            <td>{{ reg.event.category.name|default:"—" }}</td>
+                            <td>{{ reg.get_status_display }}</td>
+                            <td><code>{{ reg.entry_code }}</code></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info rounded-4 mb-0">По выбранным условиям данные не найдены.</div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .events-report-hero { background: linear-gradient(135deg, #0f766e, #2563eb); }
+    .table thead th { color: #6b7280; font-weight: 700; }
+</style>
 {% endblock %}

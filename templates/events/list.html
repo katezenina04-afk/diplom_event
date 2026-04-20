@@ -37,13 +37,22 @@
             </div>
 
             <form method="get" class="row g-3">
-                <div class="col-lg-4">
+                <div class="col-lg-3">
                     <label class="form-label fw-semibold">Поиск</label>
                     <input type="text"
                            name="q"
                            class="form-control"
                            placeholder="Название, описание, место..."
                            value="{{ q }}">
+                </div>
+
+                <div class="col-lg-3">
+                    <label class="form-label fw-semibold">Площадка</label>
+                    <input type="text"
+                        name="venue"
+                        class="form-control"
+                        placeholder="Например, ДК Современник"
+                        value="{{ venue }}">
                 </div>
 
                 <div class="col-lg-2">
@@ -80,7 +89,7 @@
                     </select>
                 </div>
 
-                <div class="col-lg-2 d-flex align-items-end">
+                <div class="col-12 d-flex justify-content-end">
                     <button type="submit" class="btn btn-primary w-100">Показать</button>
                 </div>
             </form>
